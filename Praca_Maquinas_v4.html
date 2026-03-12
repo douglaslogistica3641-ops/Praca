@@ -1,0 +1,1711 @@
+<!DOCTYPE html>
+<html lang="pt-BR" data-theme="dark">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Praça de Máquinas v4 — Frota de Rebocadores</title>
+<style>
+/* ========================================================
+   NOVA MELHORIA #1 — SISTEMA DE TEMAS CLARO / ESCURO
+   ======================================================== */
+:root {
+  --navy:        #0b2545;
+  --petrol:      #13505b;
+  --petrol-lt:   #1a6b7a;
+  --dark-red:    #8b1a1a;
+  --dark-red-h:  #a82020;
+  --orange:      #c76f30;
+  --orange-h:    #e0883e;
+  --bg:          #0d1b2a;
+  --panel:       #111f30;
+  --panel-bdr:   #1e3a55;
+  --text:        #d5dde5;
+  --text-dim:    #7e8f9f;
+  --accent:      #4da8c4;
+  --accent-glow: rgba(77,168,196,0.18);
+  --grid-line:   rgba(77,168,196,0.06);
+  --success:     #2a8a4a;
+  --warn-col:    #c76f30;
+  --danger:      #8b1a1a;
+  --font-mono:   'Courier New', Courier, monospace;
+  --font-sans:   'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  --pump-cyan:   #2a8a8a;
+  --comp-gold:   #8a7a2a;
+  --transition:  0.22s ease;
+  --radius:      6px;
+  --shadow:      0 4px 24px rgba(0,0,0,0.55);
+  --canvas-bg:   #0a1622;
+}
+[data-theme="light"] {
+  --bg:          #eef2f7;
+  --panel:       #ffffff;
+  --panel-bdr:   #c8d5e8;
+  --text:        #1a2a3a;
+  --text-dim:    #5a6e80;
+  --navy:        #d0e0f0;
+  --petrol:      #b0d0da;
+  --petrol-lt:   #80b8c8;
+  --accent:      #1a6a8a;
+  --accent-glow: rgba(26,106,138,0.15);
+  --grid-line:   rgba(26,106,138,0.07);
+  --panel-bdr:   #c0d4e8;
+  --canvas-bg:   #f0f6fc;
+}
+
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+::-webkit-scrollbar{width:5px;height:5px}
+::-webkit-scrollbar-track{background:var(--bg)}
+::-webkit-scrollbar-thumb{background:var(--panel-bdr);border-radius:3px}
+::-webkit-scrollbar-thumb:hover{background:var(--accent)}
+
+html{font-size:15px;scroll-behavior:smooth}
+body{
+  font-family:var(--font-sans);background:var(--bg);color:var(--text);
+  min-height:100vh;overflow-x:hidden;
+  background-image:linear-gradient(var(--grid-line) 1px,transparent 1px),
+    linear-gradient(90deg,var(--grid-line) 1px,transparent 1px);
+  background-size:40px 40px;
+  transition:background 0.3s,color 0.3s;
+}
+
+/* ========================================================
+   HEADER
+   ======================================================== */
+header{
+  background:linear-gradient(180deg,var(--navy) 0%,var(--bg) 100%);
+  border-bottom:2px solid var(--petrol);
+  padding:0.9rem 1.5rem;
+  display:flex;align-items:center;justify-content:space-between;gap:1rem;
+  position:sticky;top:0;z-index:200;
+  backdrop-filter:blur(10px);
+  animation:slideDown 0.4s ease;
+}
+@keyframes slideDown{from{opacity:0;transform:translateY(-14px)}to{opacity:1;transform:none}}
+header::after{content:'';position:absolute;bottom:-2px;left:0;right:0;height:2px;
+  background:linear-gradient(90deg,transparent,var(--accent),transparent)}
+.header-left h1{
+  font-family:var(--font-mono);font-size:0.95rem;letter-spacing:0.28em;
+  text-transform:uppercase;color:var(--accent);
+  text-shadow:0 0 18px rgba(77,168,196,0.3);
+}
+.header-left .subtitle{font-size:0.63rem;letter-spacing:0.4em;color:var(--text-dim);text-transform:uppercase;margin-top:0.1rem}
+.header-right{display:flex;gap:0.6rem;align-items:center;flex-wrap:wrap}
+
+/* ========================================================
+   NOVA MELHORIA #20 — BADGE DE VERSÃO COM CHANGELOG
+   ======================================================== */
+.version-badge{
+  font-family:var(--font-mono);font-size:0.58rem;letter-spacing:0.1em;
+  color:var(--accent);border:1px solid var(--accent);border-radius:12px;
+  padding:0.15rem 0.55rem;cursor:pointer;transition:all var(--transition);
+  background:rgba(77,168,196,0.05);
+}
+.version-badge:hover{background:var(--accent);color:var(--bg)}
+
+/* NOVA MELHORIA #1 — Theme toggle */
+.theme-btn{
+  width:32px;height:32px;border-radius:50%;border:1px solid var(--panel-bdr);
+  background:var(--panel);cursor:pointer;font-size:1rem;
+  display:flex;align-items:center;justify-content:center;
+  transition:all var(--transition);
+}
+.theme-btn:hover{border-color:var(--accent);transform:rotate(20deg)}
+
+.status-group{display:flex;align-items:center;gap:0.6rem;font-family:var(--font-mono);font-size:0.65rem;color:var(--text-dim)}
+.status-dot{width:7px;height:7px;border-radius:50%;background:var(--success);box-shadow:0 0 6px #2a8a4a;animation:pulse 2s infinite}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:0.4}}
+#liveClock{color:var(--accent);letter-spacing:0.08em;font-family:var(--font-mono);font-size:0.7rem}
+
+/* ========================================================
+   NOVA MELHORIA #17 — PAINEL DE RESUMO DA FROTA
+   ======================================================== */
+.fleet-summary{
+  display:flex;gap:0;border-bottom:1px solid var(--panel-bdr);
+  background:rgba(19,80,91,0.06);overflow-x:auto;
+}
+.fleet-summary-item{
+  flex:1;min-width:120px;padding:0.55rem 1rem;
+  border-right:1px solid var(--panel-bdr);text-align:center;
+  transition:background var(--transition);
+}
+.fleet-summary-item:last-child{border-right:none}
+.fleet-summary-item:hover{background:rgba(77,168,196,0.05)}
+.fsi-val{font-family:var(--font-mono);font-size:1rem;font-weight:700;color:var(--accent)}
+.fsi-label{font-family:var(--font-mono);font-size:0.55rem;letter-spacing:0.12em;text-transform:uppercase;color:var(--text-dim);margin-top:0.1rem}
+
+/* ========================================================
+   SELECTOR ROW + NOVA MELHORIA #2 — BUSCA EM TEMPO REAL
+   ======================================================== */
+.selector-row{
+  display:flex;align-items:center;justify-content:center;gap:0.8rem;
+  padding:0.8rem 1.5rem;background:rgba(17,31,48,0.6);
+  border-bottom:1px solid var(--panel-bdr);flex-wrap:wrap;
+}
+.selector-row label{font-family:var(--font-mono);font-size:0.7rem;letter-spacing:0.12em;color:var(--text-dim);text-transform:uppercase}
+.search-wrap{position:relative;display:flex;align-items:center}
+#vesselSearch{
+  background:var(--panel);color:var(--text);border:1px solid var(--panel-bdr);
+  padding:0.45rem 1rem 0.45rem 2rem;font-family:var(--font-mono);font-size:0.82rem;
+  border-radius:var(--radius);min-width:240px;
+  transition:border-color var(--transition),box-shadow var(--transition);
+}
+#vesselSearch:focus{border-color:var(--accent);box-shadow:0 0 0 2px var(--accent-glow);outline:none}
+.search-icon{position:absolute;left:0.6rem;font-size:0.8rem;color:var(--text-dim);pointer-events:none}
+.search-results{
+  position:absolute;top:calc(100% + 4px);left:0;right:0;
+  background:var(--panel);border:1px solid var(--panel-bdr);border-radius:var(--radius);
+  z-index:300;max-height:240px;overflow-y:auto;display:none;
+  box-shadow:var(--shadow);
+}
+.search-result-item{
+  padding:0.45rem 0.9rem;font-family:var(--font-mono);font-size:0.78rem;
+  cursor:pointer;transition:background var(--transition);border-bottom:1px solid rgba(30,58,85,0.25);
+  display:flex;justify-content:space-between;align-items:center;
+}
+.search-result-item:last-child{border-bottom:none}
+.search-result-item:hover{background:rgba(77,168,196,0.08);color:var(--accent)}
+.search-result-item .sri-year{font-size:0.62rem;color:var(--text-dim)}
+.search-result-item mark{background:rgba(77,168,196,0.25);color:var(--accent);border-radius:2px;padding:0 1px}
+
+.nav-btn{
+  background:var(--panel);border:1px solid var(--panel-bdr);color:var(--text-dim);
+  width:30px;height:30px;border-radius:var(--radius);cursor:pointer;font-size:0.85rem;
+  display:flex;align-items:center;justify-content:center;transition:all var(--transition);
+}
+.nav-btn:hover{border-color:var(--accent);color:var(--accent)}
+.nav-btn:disabled{opacity:0.28;cursor:not-allowed}
+.casco-pill{
+  padding:0.22rem 0.75rem;border-radius:20px;font-family:var(--font-mono);
+  font-size:0.62rem;letter-spacing:0.08em;text-transform:uppercase;
+  display:none;align-items:center;gap:0.35rem;
+}
+.casco-pill.aco{background:rgba(77,168,196,0.1);border:1px solid rgba(77,168,196,0.3);color:var(--accent)}
+.casco-pill.madeira{background:rgba(199,111,48,0.1);border:1px solid rgba(199,111,48,0.3);color:var(--orange)}
+.kbd-hint{font-size:0.58rem;color:var(--text-dim);font-family:var(--font-mono);padding:0.12rem 0.38rem;border:1px solid var(--panel-bdr);border-radius:3px}
+
+/* ========================================================
+   NOVA MELHORIA #8 — BREADCRUMB / HISTÓRICO
+   ======================================================== */
+.breadcrumb{
+  padding:0.35rem 1.5rem;background:rgba(11,31,48,0.4);border-bottom:1px solid rgba(30,58,85,0.3);
+  display:flex;align-items:center;gap:0.4rem;font-family:var(--font-mono);font-size:0.62rem;
+  color:var(--text-dim);min-height:28px;overflow-x:auto;white-space:nowrap;
+}
+.breadcrumb-item{
+  cursor:pointer;padding:0.1rem 0.4rem;border-radius:3px;transition:all var(--transition);
+}
+.breadcrumb-item:hover{color:var(--accent);background:rgba(77,168,196,0.08)}
+.breadcrumb-sep{opacity:0.35}
+.breadcrumb-current{color:var(--accent)}
+
+/* ========================================================
+   MAIN LAYOUT
+   ======================================================== */
+.main-container{display:flex;gap:1.4rem;padding:1.2rem 1.5rem 2rem;max-width:1750px;margin:0 auto;align-items:flex-start}
+.left-column{flex:1;display:flex;flex-direction:column;gap:1.1rem;min-width:0}
+
+/* ========================================================
+   CANVAS WRAPPER
+   ======================================================== */
+.canvas-wrapper{
+  background:var(--panel);border:1px solid var(--panel-bdr);
+  border-radius:var(--radius);overflow:hidden;
+  transition:border-color var(--transition);
+}
+.canvas-wrapper:hover{border-color:rgba(77,168,196,0.3)}
+.canvas-header{
+  font-family:var(--font-mono);font-size:0.68rem;letter-spacing:0.18em;text-transform:uppercase;
+  color:var(--text-dim);padding:0.6rem 1rem;border-bottom:1px solid var(--panel-bdr);
+  display:flex;justify-content:space-between;align-items:center;
+}
+.canvas-header .badge{
+  background:var(--petrol);color:var(--accent);padding:0.12rem 0.55rem;
+  border-radius:3px;font-size:0.62rem;
+}
+/* NOVA MELHORIA #6 — Contador HUD de sistemas */
+.canvas-hud{
+  display:flex;gap:0.8rem;align-items:center;flex-wrap:wrap;
+}
+.hud-chip{
+  font-family:var(--font-mono);font-size:0.58rem;letter-spacing:0.06em;
+  color:var(--text-dim);background:rgba(77,168,196,0.06);
+  border:1px solid rgba(77,168,196,0.12);border-radius:3px;padding:0.08rem 0.45rem;
+}
+
+/* CANVAS TOOLBAR */
+.canvas-toolbar{
+  display:none;gap:0.4rem;padding:0.45rem 1rem;
+  border-bottom:1px solid var(--panel-bdr);background:rgba(11,37,69,0.35);
+  align-items:center;flex-wrap:wrap;
+}
+.toolbar-btn{
+  background:var(--navy);border:1px solid var(--panel-bdr);color:var(--text-dim);
+  padding:0.22rem 0.55rem;border-radius:4px;font-family:var(--font-mono);font-size:0.6rem;
+  letter-spacing:0.07em;cursor:pointer;transition:all var(--transition);
+}
+.toolbar-btn:hover{border-color:var(--accent);color:var(--accent)}
+.toolbar-btn.active{border-color:var(--accent);color:var(--accent);background:rgba(77,168,196,0.08)}
+.toolbar-sep{width:1px;height:14px;background:var(--panel-bdr);margin:0 0.15rem}
+.zoom-level{font-family:var(--font-mono);font-size:0.62rem;color:var(--text-dim);min-width:38px;text-align:center}
+/* NOVA MELHORIA #18 — Slider de opacidade da grade */
+.grid-opacity-wrap{display:flex;align-items:center;gap:0.4rem;font-family:var(--font-mono);font-size:0.6rem;color:var(--text-dim)}
+#gridOpacity{width:60px;accent-color:var(--accent);cursor:pointer}
+
+#engineCanvas{display:block;width:100%;cursor:crosshair;transition:opacity 0.3s;user-select:none}
+.canvas-fade{animation:canvasFade 0.3s ease}
+@keyframes canvasFade{from{opacity:0.15}to{opacity:1}}
+
+/* NOVA MELHORIA #5 — Fullscreen button */
+.fullscreen-btn{
+  font-family:var(--font-mono);font-size:0.6rem;letter-spacing:0.07em;padding:0.15rem 0.5rem;
+  border:1px solid var(--panel-bdr);border-radius:3px;background:none;
+  color:var(--text-dim);cursor:pointer;transition:all var(--transition);
+}
+.fullscreen-btn:hover{border-color:var(--accent);color:var(--accent)}
+canvas:-webkit-full-screen{width:100vw;height:100vh}
+
+.legend{
+  display:none;gap:0.7rem;padding:0.5rem 1rem;border-top:1px solid var(--panel-bdr);
+  flex-wrap:wrap;background:rgba(11,37,69,0.18);
+}
+.legend-item{display:flex;align-items:center;gap:0.3rem;font-family:var(--font-mono);font-size:0.56rem;color:var(--text-dim);text-transform:uppercase;letter-spacing:0.05em;cursor:default;transition:color var(--transition)}
+.legend-item:hover{color:var(--text)}
+.legend-color{width:10px;height:10px;border-radius:2px;border:1px solid rgba(255,255,255,0.08)}
+
+/* BUTTONS */
+.btn-row{display:none;gap:0.6rem;padding:0.7rem 1rem;border-top:1px solid var(--panel-bdr)}
+.btn{
+  flex:1;font-family:var(--font-mono);font-size:0.68rem;letter-spacing:0.1em;text-transform:uppercase;
+  padding:0.55rem 0.7rem;border:1px solid var(--panel-bdr);border-radius:4px;
+  background:var(--navy);color:var(--text);cursor:pointer;transition:all var(--transition);text-align:center;
+}
+.btn:hover{background:var(--petrol);border-color:var(--accent);color:#fff}
+.btn:active{transform:scale(0.97)}
+.btn.btn-red{border-color:var(--dark-red)}
+.btn.btn-red:hover{background:var(--dark-red);border-color:var(--dark-red-h)}
+.btn.btn-gold{border-color:var(--comp-gold)}
+.btn.btn-gold:hover{background:var(--comp-gold);color:#fff}
+
+/* ========================================================
+   NOVA MELHORIA #10 — EFICIÊNCIA ENERGÉTICA A-E
+   ======================================================== */
+.eff-badge{
+  display:inline-block;font-family:var(--font-mono);font-size:0.75rem;font-weight:700;
+  width:22px;height:22px;line-height:22px;text-align:center;border-radius:3px;
+}
+.eff-A{background:#1a6a3a;color:#7fffaa}
+.eff-B{background:#2a6a1a;color:#b0ffb0}
+.eff-C{background:#5a6a1a;color:#ffffb0}
+.eff-D{background:#6a4a1a;color:#ffcf80}
+.eff-E{background:#6a1a1a;color:#ff9080}
+
+/* ========================================================
+   ANÁLISE — 4 CARDS
+   ======================================================== */
+.analysis-row{display:none;grid-template-columns:repeat(4,1fr);gap:0.9rem}
+.analysis-card{background:var(--panel);border:1px solid var(--panel-bdr);border-radius:var(--radius);overflow:hidden;transition:border-color var(--transition)}
+.analysis-card:hover{border-color:rgba(77,168,196,0.28)}
+.analysis-card-header{
+  font-family:var(--font-mono);font-size:0.6rem;letter-spacing:0.16em;text-transform:uppercase;color:var(--accent);
+  padding:0.55rem 0.8rem;border-bottom:1px solid var(--panel-bdr);background:rgba(19,80,91,0.1);
+  display:flex;align-items:center;gap:0.4rem;
+}
+.analysis-card-header .icon-tag{font-size:0.82rem}
+.a-row{
+  display:flex;justify-content:space-between;align-items:center;
+  padding:0.42rem 0.8rem;border-bottom:1px solid rgba(30,58,85,0.3);font-size:0.76rem;transition:background 0.18s;
+}
+.a-row:last-child{border-bottom:none}
+.a-row:hover{background:rgba(77,168,196,0.04)}
+.a-row .al{color:var(--text-dim);font-family:var(--font-mono);font-size:0.62rem;text-transform:uppercase;letter-spacing:0.03em}
+.a-row .av{color:var(--text);font-weight:500}
+.a-row .av.hi{color:var(--accent);font-weight:700}
+.bar-wrap{display:flex;align-items:center;gap:5px;flex:1;justify-content:flex-end}
+.mini-bar{flex:1;max-width:55px;height:4px;background:rgba(255,255,255,0.05);border-radius:2px;overflow:hidden}
+.mini-bar-fill{height:100%;border-radius:2px;transition:width 0.7s ease}
+.fuel-grid{display:grid;grid-template-columns:auto 1fr 1fr;font-size:0.72rem}
+.fuel-grid .fh{font-family:var(--font-mono);font-size:0.58rem;letter-spacing:0.07em;text-transform:uppercase;color:var(--text-dim);padding:0.32rem 0.55rem;border-bottom:1px solid var(--panel-bdr);background:rgba(19,80,91,0.06)}
+.fuel-grid .fc{padding:0.28rem 0.55rem;border-bottom:1px solid rgba(30,58,85,0.22);color:var(--text)}
+.fuel-grid .fc.label-col{color:var(--text-dim);font-family:var(--font-mono);font-size:0.65rem}
+.fuel-grid .fc.hi{color:var(--accent)}
+
+/* ========================================================
+   NOVA MELHORIA #3 — PAINEL DE ALERTAS DE MANUTENÇÃO
+   ======================================================== */
+.alerts-panel{
+  background:var(--panel);border:1px solid var(--panel-bdr);border-radius:var(--radius);
+  overflow:hidden;display:none;
+}
+.alerts-header{
+  font-family:var(--font-mono);font-size:0.68rem;letter-spacing:0.18em;text-transform:uppercase;
+  color:var(--warn-col);padding:0.6rem 1rem;border-bottom:1px solid var(--panel-bdr);
+  background:rgba(199,111,48,0.07);display:flex;align-items:center;gap:0.5rem;
+}
+.alert-item{
+  display:flex;align-items:flex-start;gap:0.7rem;padding:0.55rem 1rem;
+  border-bottom:1px solid rgba(30,58,85,0.3);font-size:0.78rem;transition:background var(--transition);
+}
+.alert-item:last-child{border-bottom:none}
+.alert-item:hover{background:rgba(199,111,48,0.04)}
+.alert-icon{font-size:0.9rem;flex-shrink:0;margin-top:0.05rem}
+.alert-text{flex:1}
+.alert-title{color:var(--text);font-weight:600;font-size:0.76rem}
+.alert-sub{color:var(--text-dim);font-family:var(--font-mono);font-size:0.62rem;margin-top:0.1rem}
+.alert-badge{
+  font-family:var(--font-mono);font-size:0.6rem;padding:0.1rem 0.45rem;border-radius:3px;
+  flex-shrink:0;align-self:center;
+}
+.alert-badge.crit{background:rgba(139,26,26,0.2);border:1px solid var(--dark-red);color:#ff8080}
+.alert-badge.warn{background:rgba(199,111,48,0.15);border:1px solid var(--orange);color:var(--orange)}
+
+/* ========================================================
+   RIGHT COLUMN
+   ======================================================== */
+.right-column{width:360px;flex-shrink:0;display:flex;flex-direction:column;gap:1.1rem}
+.tech-panel{background:var(--panel);border:1px solid var(--panel-bdr);border-radius:var(--radius);overflow:hidden}
+.tech-panel-header{
+  font-family:var(--font-mono);font-size:0.68rem;letter-spacing:0.18em;text-transform:uppercase;
+  color:var(--accent);padding:0.7rem 1rem;border-bottom:1px solid var(--panel-bdr);
+  background:rgba(19,80,91,0.12);display:flex;justify-content:space-between;align-items:center;
+}
+.tech-panel-btns{display:flex;gap:0.35rem}
+.copy-btn{
+  background:none;border:1px solid var(--panel-bdr);color:var(--text-dim);
+  padding:0.08rem 0.4rem;border-radius:3px;cursor:pointer;
+  font-size:0.6rem;font-family:var(--font-mono);letter-spacing:0.05em;transition:all var(--transition);
+}
+.copy-btn:hover{border-color:var(--accent);color:var(--accent)}
+.tech-content{padding:0;max-height:480px;overflow-y:auto}
+.tech-row{display:flex;padding:0.48rem 1rem;border-bottom:1px solid rgba(30,58,85,0.45);font-size:0.77rem;transition:background 0.18s;cursor:default}
+.tech-row:hover{background:rgba(77,168,196,0.04)}
+.tech-row:last-child{border-bottom:none}
+.tech-label{width:124px;flex-shrink:0;font-family:var(--font-mono);font-size:0.61rem;letter-spacing:0.04em;color:var(--text-dim);text-transform:uppercase;padding-top:0.1rem}
+.tech-value{flex:1;color:var(--text);font-size:0.78rem;word-break:break-word}
+.tech-value.highlight{color:var(--accent);font-weight:600}
+.tech-value.warn-val{color:var(--warn-col)}
+.tech-separator{
+  padding:0.32rem 1rem;font-family:var(--font-mono);font-size:0.56rem;letter-spacing:0.16em;
+  text-transform:uppercase;color:var(--petrol-lt);border-bottom:1px solid var(--panel-bdr);
+  background:rgba(19,80,91,0.05);display:flex;align-items:center;gap:0.5rem;
+}
+.tech-separator::after{content:'';flex:1;height:1px;background:rgba(26,107,122,0.18)}
+
+/* ========================================================
+   NOVA MELHORIA #19 — NOTAS POR EMBARCAÇÃO
+   ======================================================== */
+.notes-panel{background:var(--panel);border:1px solid var(--panel-bdr);border-radius:var(--radius);overflow:hidden;display:none}
+.notes-header{
+  font-family:var(--font-mono);font-size:0.68rem;letter-spacing:0.18em;text-transform:uppercase;
+  color:var(--accent);padding:0.7rem 1rem;border-bottom:1px solid var(--panel-bdr);
+  background:rgba(19,80,91,0.12);display:flex;justify-content:space-between;align-items:center;
+}
+#notesArea{
+  width:100%;min-height:80px;background:var(--panel);color:var(--text);
+  border:none;border-bottom:1px solid var(--panel-bdr);padding:0.7rem 1rem;
+  font-family:var(--font-sans);font-size:0.8rem;resize:vertical;outline:none;
+  line-height:1.5;
+}
+#notesArea::placeholder{color:var(--text-dim);font-style:italic}
+.notes-footer{
+  display:flex;justify-content:space-between;align-items:center;
+  padding:0.4rem 1rem;font-family:var(--font-mono);font-size:0.6rem;color:var(--text-dim);
+}
+.notes-save-btn{
+  background:var(--petrol);border:none;color:var(--accent);padding:0.2rem 0.6rem;
+  border-radius:3px;cursor:pointer;font-family:var(--font-mono);font-size:0.6rem;letter-spacing:0.08em;
+  transition:all var(--transition);
+}
+.notes-save-btn:hover{background:var(--petrol-lt)}
+
+/* ========================================================
+   NOVA MELHORIA #14 — FAVORITOS
+   ======================================================== */
+.fav-btn{
+  font-size:1rem;background:none;border:none;cursor:pointer;line-height:1;
+  transition:transform var(--transition);padding:0;
+}
+.fav-btn:hover{transform:scale(1.2)}
+
+/* ========================================================
+   NOVA MELHORIA #4 — GRÁFICO SVG DE COMPARAÇÃO
+   ======================================================== */
+.chart-panel{background:var(--panel);border:1px solid var(--panel-bdr);border-radius:var(--radius);overflow:hidden}
+.chart-header{
+  font-family:var(--font-mono);font-size:0.68rem;letter-spacing:0.18em;text-transform:uppercase;
+  color:var(--accent);padding:0.7rem 1rem;border-bottom:1px solid var(--panel-bdr);
+  background:rgba(19,80,91,0.12);display:flex;justify-content:space-between;align-items:center;
+}
+.chart-tabs{display:flex;gap:0}
+.chart-tab{
+  font-family:var(--font-mono);font-size:0.58rem;letter-spacing:0.08em;text-transform:uppercase;
+  padding:0.18rem 0.6rem;cursor:pointer;color:var(--text-dim);border:1px solid var(--panel-bdr);
+  background:var(--navy);transition:all var(--transition);border-radius:3px;margin-left:2px;
+}
+.chart-tab.active{border-color:var(--accent);color:var(--accent);background:rgba(77,168,196,0.08)}
+#fleetChartSvg{display:block;width:100%;height:220px;overflow:visible}
+
+/* ========================================================
+   NOVA MELHORIA #15 — COMPARAR 2 EMBARCAÇÕES
+   ======================================================== */
+.compare-modal-overlay{
+  display:none;position:fixed;inset:0;background:rgba(0,0,0,0.78);z-index:10000;
+  justify-content:center;align-items:center;backdrop-filter:blur(5px);
+}
+.compare-modal-overlay.active{display:flex;animation:fadein 0.2s ease}
+.compare-modal{
+  background:var(--panel);border:1px solid var(--panel-bdr);border-radius:8px;
+  width:900px;max-width:96vw;max-height:90vh;overflow-y:auto;box-shadow:var(--shadow);
+}
+.compare-modal-header{
+  display:flex;justify-content:space-between;align-items:center;
+  padding:0.9rem 1.4rem;border-bottom:1px solid var(--panel-bdr);
+  background:rgba(19,80,91,0.12);position:sticky;top:0;z-index:1;
+}
+.compare-modal-header h2{font-family:var(--font-mono);font-size:0.82rem;letter-spacing:0.2em;text-transform:uppercase;color:var(--accent)}
+.compare-grid{display:grid;grid-template-columns:1fr 1fr;gap:0}
+.compare-col{padding:1.2rem}
+.compare-col+.compare-col{border-left:1px solid var(--panel-bdr)}
+.compare-col h3{font-family:var(--font-mono);font-size:0.75rem;letter-spacing:0.15em;text-transform:uppercase;color:var(--accent);margin-bottom:0.8rem;padding-bottom:0.4rem;border-bottom:1px solid var(--panel-bdr)}
+.compare-row{display:flex;justify-content:space-between;padding:0.3rem 0;font-size:0.8rem;border-bottom:1px solid rgba(30,58,85,0.2)}
+.compare-row:last-child{border-bottom:none}
+.compare-row .cr-label{color:var(--text-dim);font-size:0.72rem}
+.compare-row .cr-val{font-weight:600}
+.compare-row .cr-val.better{color:#4ada80}
+.compare-row .cr-val.worse{color:#ff8080}
+.compare-selects{display:flex;gap:1rem;padding:1rem 1.4rem;border-bottom:1px solid var(--panel-bdr);background:rgba(11,37,69,0.2)}
+.compare-selects select{flex:1;background:var(--panel);color:var(--text);border:1px solid var(--panel-bdr);padding:0.45rem 0.8rem;font-family:var(--font-mono);font-size:0.8rem;border-radius:var(--radius)}
+.compare-selects select:focus{border-color:var(--accent);outline:none}
+
+/* ========================================================
+   NOVA MELHORIA #12 — CHECKLIST DE INSPEÇÃO
+   ======================================================== */
+.checklist-panel{background:var(--panel);border:1px solid var(--panel-bdr);border-radius:var(--radius);overflow:hidden;display:none}
+.checklist-header{
+  font-family:var(--font-mono);font-size:0.68rem;letter-spacing:0.18em;text-transform:uppercase;
+  color:var(--accent);padding:0.7rem 1rem;border-bottom:1px solid var(--panel-bdr);
+  background:rgba(19,80,91,0.12);display:flex;justify-content:space-between;align-items:center;
+}
+.checklist-progress{font-size:0.62rem;color:var(--text-dim)}
+.checklist-body{padding:0.3rem 0}
+.check-item{
+  display:flex;align-items:center;gap:0.7rem;padding:0.38rem 1rem;
+  border-bottom:1px solid rgba(30,58,85,0.25);font-size:0.78rem;
+  cursor:pointer;transition:background var(--transition);
+}
+.check-item:last-child{border-bottom:none}
+.check-item:hover{background:rgba(77,168,196,0.04)}
+.check-item input[type=checkbox]{accent-color:var(--accent);cursor:pointer;width:14px;height:14px;flex-shrink:0}
+.check-item.done span{text-decoration:line-through;color:var(--text-dim)}
+.check-category{font-family:var(--font-mono);font-size:0.56rem;letter-spacing:0.12em;text-transform:uppercase;padding:0.25rem 1rem;color:var(--petrol-lt);background:rgba(19,80,91,0.06);border-bottom:1px solid var(--panel-bdr)}
+
+/* ========================================================
+   TOOLTIP & MODAL REPORTS
+   ======================================================== */
+#tooltip{
+  position:fixed;display:none;background:var(--navy);border:1px solid var(--accent);
+  color:var(--text);padding:0.55rem 0.85rem;border-radius:4px;font-family:var(--font-mono);
+  font-size:0.7rem;line-height:1.5;pointer-events:none;z-index:9999;max-width:290px;
+  box-shadow:var(--shadow);animation:fadein 0.1s ease;
+}
+@keyframes fadein{from{opacity:0;transform:scale(0.96)}to{opacity:1;transform:none}}
+
+.modal-overlay{
+  display:none;position:fixed;inset:0;background:rgba(0,0,0,0.76);z-index:10000;
+  justify-content:center;align-items:center;backdrop-filter:blur(5px);
+}
+.modal-overlay.active{display:flex;animation:fadein 0.2s ease}
+.modal{
+  background:var(--panel);border:1px solid var(--panel-bdr);border-radius:8px;
+  width:780px;max-width:96vw;max-height:88vh;overflow-y:auto;box-shadow:var(--shadow);
+}
+.modal-header{
+  display:flex;justify-content:space-between;align-items:center;
+  padding:0.9rem 1.4rem;border-bottom:1px solid var(--panel-bdr);
+  background:rgba(19,80,91,0.12);position:sticky;top:0;z-index:1;
+}
+.modal-header h2{font-family:var(--font-mono);font-size:0.82rem;letter-spacing:0.2em;text-transform:uppercase;color:var(--accent)}
+.modal-header-btns{display:flex;gap:0.5rem;align-items:center}
+.modal-close{background:none;border:1px solid var(--panel-bdr);color:var(--text-dim);width:28px;height:28px;border-radius:4px;cursor:pointer;font-size:0.95rem;display:flex;align-items:center;justify-content:center;transition:all var(--transition)}
+.modal-close:hover{border-color:var(--dark-red);color:var(--dark-red-h)}
+.modal-body{padding:1.4rem}
+.modal-tabs{display:flex;border-bottom:1px solid var(--panel-bdr);margin-bottom:1.1rem}
+.modal-tab{font-family:var(--font-mono);font-size:0.65rem;letter-spacing:0.1em;text-transform:uppercase;padding:0.45rem 0.9rem;cursor:pointer;border-bottom:2px solid transparent;color:var(--text-dim);transition:all var(--transition);background:none;border-top:none;border-left:none;border-right:none}
+.modal-tab.active{color:var(--accent);border-bottom-color:var(--accent)}
+.modal-tab-content{display:none}
+.modal-tab-content.active{display:block}
+.report-section{margin-bottom:1.1rem}
+.report-section h3{font-family:var(--font-mono);font-size:0.68rem;letter-spacing:0.14em;text-transform:uppercase;color:var(--petrol-lt);padding-bottom:0.35rem;border-bottom:1px solid var(--panel-bdr);margin-bottom:0.55rem}
+.report-row{display:flex;justify-content:space-between;padding:0.3rem 0;font-size:0.8rem}
+.report-row .rl{color:var(--text-dim);font-size:0.72rem}
+.report-row .rv{color:var(--text)}
+.report-row .rv.rhi{color:var(--accent);font-weight:600}
+
+/* ========================================================
+   NOVA MELHORIA #21 — MODAL DE ATALHOS DE TECLADO
+   ======================================================== */
+.shortcuts-modal .modal{width:500px}
+.shortcut-row{display:flex;justify-content:space-between;align-items:center;padding:0.42rem 0;border-bottom:1px solid rgba(30,58,85,0.25);font-size:0.82rem}
+.shortcut-row:last-child{border-bottom:none}
+.shortcut-keys{display:flex;gap:0.3rem}
+.key{font-family:var(--font-mono);font-size:0.68rem;background:var(--navy);border:1px solid var(--panel-bdr);border-bottom:3px solid var(--panel-bdr);border-radius:4px;padding:0.18rem 0.5rem;color:var(--accent)}
+.shortcut-desc{color:var(--text-dim);font-size:0.78rem}
+.shortcut-section{margin-bottom:1rem}
+.shortcut-section h4{font-family:var(--font-mono);font-size:0.6rem;letter-spacing:0.14em;text-transform:uppercase;color:var(--petrol-lt);margin-bottom:0.5rem}
+
+/* ========================================================
+   TOAST & EMPTY
+   ======================================================== */
+#toast{
+  position:fixed;bottom:1.4rem;right:1.4rem;z-index:20000;
+  background:var(--petrol);border:1px solid var(--accent);border-radius:6px;
+  padding:0.65rem 1.1rem;font-family:var(--font-mono);font-size:0.73rem;
+  color:var(--text);box-shadow:var(--shadow);display:none;
+  animation:toastIn 0.28s ease;
+}
+@keyframes toastIn{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:none}}
+.empty-state{display:flex;align-items:center;justify-content:center;height:380px;flex-direction:column;gap:0.55rem;color:var(--text-dim);font-family:var(--font-mono);font-size:0.78rem;letter-spacing:0.09em}
+.empty-state .icon{font-size:2.4rem;opacity:0.28}
+
+/* RESPONSIVE */
+@media(max-width:1250px){.main-container{flex-direction:column;padding:1rem}.right-column{width:100%}.analysis-row{grid-template-columns:1fr 1fr}}
+@media(max-width:700px){header{flex-direction:column;gap:0.5rem}.analysis-row{grid-template-columns:1fr}.selector-row{flex-direction:column;align-items:stretch}.fleet-summary{display:none}}
+@media print{header{position:static}.selector-row,.btn-row,.canvas-toolbar,.nav-btn,.breadcrumb,.fleet-summary,.alerts-panel,.notes-panel,.checklist-panel,.chart-panel{display:none!important}.main-container{flex-direction:column}.right-column{width:100%}}
+</style>
+</head>
+<body>
+
+<!-- ============================================================
+     HEADER
+     ============================================================ -->
+<header>
+  <div class="header-left">
+    <h1>Praça de Máquinas — Frota de Rebocadores</h1>
+    <div class="subtitle">Sistema de Engenharia Naval • Painel Técnico v4.0</div>
+  </div>
+  <div class="header-right">
+    <!-- NOVA #1: Theme toggle -->
+    <button class="theme-btn" id="themeBtn" title="Alternar tema">🌙</button>
+    <!-- NOVA #21: Ajuda de atalhos -->
+    <button class="theme-btn" id="shortcutsBtn" title="Atalhos de teclado [?]" style="font-size:0.85rem">?</button>
+    <!-- NOVA #20: Badge de versão -->
+    <button class="version-badge" id="versionBadge">v4.0 ▸ novidades</button>
+    <div class="status-group">
+      <div class="status-dot"></div>
+      <span>ONLINE</span>
+      <span id="liveClock">--:--:--</span>
+    </div>
+  </div>
+</header>
+
+<!-- NOVA #17: Resumo da Frota -->
+<div class="fleet-summary" id="fleetSummary"></div>
+
+<!-- NOVA #8: Breadcrumb histórico -->
+<div class="breadcrumb" id="breadcrumb">
+  <span style="color:var(--text-dim);font-size:0.6rem">HISTÓRICO:</span>
+  <span style="opacity:0.3;font-size:0.62rem">Nenhuma embarcação visitada ainda</span>
+</div>
+
+<!-- NOVA #2: Selector com busca em tempo real -->
+<div class="selector-row">
+  <label>Buscar:</label>
+  <div class="search-wrap">
+    <span class="search-icon">🔍</span>
+    <input type="text" id="vesselSearch" placeholder="Nome da embarcação..." autocomplete="off">
+    <div class="search-results" id="searchResults"></div>
+  </div>
+  <button class="nav-btn" id="btnPrev" title="Anterior [←]" disabled>◀</button>
+  <button class="nav-btn" id="btnNext" title="Próxima [→]" disabled>▶</button>
+  <!-- NOVA #14: Favoritos rápidos -->
+  <button class="fav-btn" id="favBtn" title="Favoritar embarcação" style="display:none">☆</button>
+  <div class="casco-pill" id="cascoPill"></div>
+  <span class="kbd-hint">← → ? F</span>
+  <!-- NOVA #15: Comparar -->
+  <button class="toolbar-btn" id="btnCompare" style="display:none">⇄ Comparar</button>
+</div>
+
+<div class="main-container">
+  <!-- ===================== LEFT COLUMN ===================== -->
+  <div class="left-column">
+
+    <!-- CANVAS -->
+    <div class="canvas-wrapper" id="canvasWrapper">
+      <div class="canvas-header">
+        <span style="display:flex;align-items:center;gap:0.7rem">
+          Esquema da Praça de Máquinas
+          <div class="canvas-hud" id="canvasHud"></div>
+        </span>
+        <span style="display:flex;align-items:center;gap:0.6rem">
+          <!-- NOVA #5: Fullscreen -->
+          <button class="fullscreen-btn" id="btnFullscreen" style="display:none">⛶ Fullscreen</button>
+          <span class="badge" id="layoutBadge">—</span>
+        </span>
+      </div>
+
+      <div class="canvas-toolbar" id="canvasToolbar">
+        <button class="toolbar-btn" id="btnZoomIn">＋</button>
+        <span class="zoom-level" id="zoomLevel">100%</span>
+        <button class="toolbar-btn" id="btnZoomOut">－</button>
+        <button class="toolbar-btn" id="btnZoomReset">Reset</button>
+        <div class="toolbar-sep"></div>
+        <button class="toolbar-btn active" id="btnToggleGrid">Grade</button>
+        <button class="toolbar-btn active" id="btnToggleLabels">Rótulos</button>
+        <!-- NOVA #16: Textura casco -->
+        <button class="toolbar-btn active" id="btnToggleTexture">Textura</button>
+        <div class="toolbar-sep"></div>
+        <!-- NOVA #18: Slider opacidade -->
+        <div class="grid-opacity-wrap">
+          <span>Grade:</span>
+          <input type="range" id="gridOpacity" min="0" max="100" value="40" title="Opacidade da grade">
+          <span id="gridOpacityVal">40%</span>
+        </div>
+        <div class="toolbar-sep"></div>
+        <!-- NOVA #5: Animação propulsor -->
+        <button class="toolbar-btn" id="btnToggleAnim">⟳ Animação</button>
+      </div>
+
+      <div id="emptyState" class="empty-state">
+        <div class="icon">⚙</div>
+        <div>Busque ou selecione uma embarcação</div>
+        <small style="font-size:0.58rem;opacity:0.45">Use ← → para navegar • ? para atalhos</small>
+      </div>
+      <canvas id="engineCanvas" width="980" height="630" style="display:none"></canvas>
+
+      <div class="legend" id="legend">
+        <div class="legend-item"><div class="legend-color" style="background:#8b1a1a"></div>Motor</div>
+        <div class="legend-item"><div class="legend-color" style="background:#3a6a8a"></div>Reversora</div>
+        <div class="legend-item"><div class="legend-color" style="background:#c76f30"></div>Gerador</div>
+        <div class="legend-item"><div class="legend-color" style="background:#2a6478"></div>Tanque</div>
+        <div class="legend-item"><div class="legend-color" style="background:#2a8a8a"></div>Bomba</div>
+        <div class="legend-item"><div class="legend-color" style="background:#4da8c4"></div>Eixo</div>
+        <div class="legend-item"><div class="legend-color" style="background:#7a7a7a"></div>Mancal</div>
+        <div class="legend-item"><div class="legend-color" style="background:#3a5a3a"></div>Propulsor</div>
+        <div class="legend-item"><div class="legend-color" style="background:#8a7a2a"></div>Compressor</div>
+        <div class="legend-item"><div class="legend-color" style="background:#5a4a7a"></div>Painel Elét.</div>
+      </div>
+      <div class="btn-row" id="btnRow">
+        <button class="btn" id="btnExport">⬇ PNG</button>
+        <button class="btn btn-red" id="btnReport">📋 Relatório</button>
+        <button class="btn btn-gold" id="btnExportJSON">{ } JSON</button>
+        <button class="btn" id="btnPrint">🖨 Imprimir</button>
+      </div>
+    </div>
+
+    <!-- 4 ANALYSIS CARDS -->
+    <div class="analysis-row" id="analysisRow">
+      <div class="analysis-card">
+        <div class="analysis-card-header"><span class="icon-tag">⚙</span>Propulsão</div>
+        <div id="propulsionPanel"></div>
+      </div>
+      <div class="analysis-card">
+        <div class="analysis-card-header"><span class="icon-tag">⚡</span>Energia</div>
+        <div id="energyPanel"></div>
+      </div>
+      <div class="analysis-card">
+        <div class="analysis-card-header"><span class="icon-tag">⛽</span>Consumo</div>
+        <div id="fuelPanel"></div>
+      </div>
+      <div class="analysis-card">
+        <div class="analysis-card-header"><span class="icon-tag">🚢</span>Operação</div>
+        <div id="operationPanel"></div>
+      </div>
+    </div>
+
+    <!-- NOVA #3: Alertas de manutenção -->
+    <div class="alerts-panel" id="alertsPanel">
+      <div class="alerts-header">⚠ Alertas de Manutenção / Atenção</div>
+      <div id="alertsBody"></div>
+    </div>
+
+    <!-- NOVA #4: Gráfico SVG comparação frota -->
+    <div class="chart-panel" id="chartPanel" style="display:none">
+      <div class="chart-header">
+        <span>Comparação da Frota</span>
+        <div class="chart-tabs">
+          <button class="chart-tab active" data-metric="hp">Potência HP</button>
+          <button class="chart-tab" data-metric="area">Área m²</button>
+          <button class="chart-tab" data-metric="auto">Autonomia</button>
+          <button class="chart-tab" data-metric="pob">POB</button>
+        </div>
+      </div>
+      <svg id="fleetChartSvg" viewBox="0 0 760 200" preserveAspectRatio="none"></svg>
+    </div>
+
+  </div>
+
+  <!-- ===================== RIGHT COLUMN ===================== -->
+  <div class="right-column">
+    <div class="tech-panel">
+      <div class="tech-panel-header">
+        <span>Dados Técnicos</span>
+        <div class="tech-panel-btns">
+          <button class="copy-btn" id="btnCopyData" style="display:none">⎘ Copiar</button>
+          <button class="copy-btn" id="btnCopyJSON" style="display:none">{ } JSON</button>
+        </div>
+      </div>
+      <div class="tech-content" id="techContent">
+        <div class="empty-state" style="height:260px"><div class="icon">📐</div><div>Nenhuma embarcação</div></div>
+      </div>
+    </div>
+
+    <!-- NOVA #19: Notas -->
+    <div class="notes-panel" id="notesPanel">
+      <div class="notes-header">
+        <span>📝 Notas da Embarcação</span>
+        <span id="notesSaved" style="font-size:0.58rem;color:var(--success)"></span>
+      </div>
+      <textarea id="notesArea" placeholder="Digite anotações técnicas, observações de campo..."></textarea>
+      <div class="notes-footer">
+        <span>Salvo localmente</span>
+        <button class="notes-save-btn" id="btnSaveNote">Salvar</button>
+      </div>
+    </div>
+
+    <!-- NOVA #12: Checklist de inspeção -->
+    <div class="checklist-panel" id="checklistPanel">
+      <div class="checklist-header">
+        <span>✅ Checklist de Inspeção</span>
+        <span class="checklist-progress" id="checklistProgress">0/0</span>
+      </div>
+      <div id="checklistBody"></div>
+    </div>
+
+  </div>
+</div>
+
+<!-- TOOLTIP -->
+<div id="tooltip"></div>
+<!-- TOAST -->
+<div id="toast"></div>
+
+<!-- MODAL RELATÓRIO -->
+<div class="modal-overlay" id="modalOverlay">
+  <div class="modal">
+    <div class="modal-header">
+      <h2 id="modalTitle">Relatório Técnico</h2>
+      <div class="modal-header-btns">
+        <button class="modal-close" id="modalClose">✕</button>
+      </div>
+    </div>
+    <div class="modal-body">
+      <div class="modal-tabs">
+        <button class="modal-tab active" data-tab="geral">Geral</button>
+        <button class="modal-tab" data-tab="propulsao">Propulsão</button>
+        <button class="modal-tab" data-tab="energia">Energia</button>
+        <button class="modal-tab" data-tab="consumo">Consumo</button>
+      </div>
+      <div id="modalBody"></div>
+    </div>
+  </div>
+</div>
+
+<!-- NOVA #15: MODAL COMPARAÇÃO -->
+<div class="compare-modal-overlay" id="compareOverlay">
+  <div class="compare-modal">
+    <div class="compare-modal-header">
+      <h2>Comparar Embarcações</h2>
+      <button class="modal-close" id="compareClose">✕</button>
+    </div>
+    <div class="compare-selects">
+      <select id="compareA"></select>
+      <select id="compareB"></select>
+      <button class="toolbar-btn" id="btnRunCompare" style="white-space:nowrap;padding:0.4rem 1rem">⇄ Comparar</button>
+    </div>
+    <div class="compare-grid" id="compareGrid"></div>
+  </div>
+</div>
+
+<!-- NOVA #20: CHANGELOG MODAL -->
+<div class="modal-overlay" id="changelogOverlay">
+  <div class="modal" style="max-width:520px">
+    <div class="modal-header">
+      <h2>Novidades — v4.0</h2>
+      <button class="modal-close" id="changelogClose">✕</button>
+    </div>
+    <div class="modal-body" id="changelogBody"></div>
+  </div>
+</div>
+
+<!-- NOVA #21: ATALHOS MODAL -->
+<div class="modal-overlay shortcuts-modal" id="shortcutsOverlay">
+  <div class="modal" style="max-width:480px">
+    <div class="modal-header">
+      <h2>Atalhos de Teclado</h2>
+      <button class="modal-close" id="shortcutsClose">✕</button>
+    </div>
+    <div class="modal-body" id="shortcutsBody"></div>
+  </div>
+</div>
+
+<!-- ================================================================
+     JAVASCRIPT
+     ================================================================ -->
+<script>
+/* ================================================================
+   DADOS DA FROTA
+   ================================================================ */
+const frota = [
+  { nome:"RS CÓRREGO DO OURO", ano:2024, comprimento:33.35, boca:9.00, areaConves:170, capacidadeCarga:"09x20' ou 18x10' (150 t)", caladoMax:3.10, motores:"2x600", geradores:"3x120", pob:30, autonomia:35, casco:"Aço naval", tipo:"aço",     obs:"Academia, Starlink, molinete 7t" },
+  { nome:"RS FRADE",           ano:2023, comprimento:30.35, boca:9.00, areaConves:144, capacidadeCarga:"09x20' ou 18x10' (120 t)", caladoMax:2.79, motores:"2x375", geradores:"3x120", pob:28, autonomia:35, casco:"Aço naval", tipo:"aço",     obs:"" },
+  { nome:"RS SANA",            ano:2022, comprimento:26.10, boca:8.00, areaConves:120, capacidadeCarga:"05x20' ou 10x10' (95 t)",  caladoMax:3.00, motores:"2x335", geradores:"3x120", pob:18, autonomia:35, casco:"Aço naval", tipo:"aço",     obs:"" },
+  { nome:"RS MACAÉ",           ano:2017, comprimento:21.60, boca:8.00, areaConves:91,  capacidadeCarga:"04x20' ou 8x10' (70 t)",   caladoMax:2.42, motores:"2x300", geradores:"3x120 (emerg 40)", pob:14, autonomia:30, casco:"Aço naval", tipo:"aço", obs:"" },
+  { nome:"RS TRAPOLEO",        ano:2015, comprimento:23.70, boca:7.10, areaConves:109, capacidadeCarga:"04x20' ou 8x10' (50 t)",   caladoMax:2.18, motores:"2x220 + 1x400", geradores:"1x12.5", pob:25, autonomia:15, casco:"Madeira", tipo:"madeira", obs:"" },
+  { nome:"RS TRAPICHE",        ano:2023, comprimento:21.93, boca:7.10, areaConves:92,  capacidadeCarga:"04x20' ou 8x10' (50 t)",   caladoMax:2.12, motores:"2x220 + 1x400", geradores:"1x12.5", pob:25, autonomia:15, casco:"Madeira", tipo:"madeira", obs:"" },
+  { nome:"SEM LIMITES V",      ano:2012, comprimento:21.70, boca:7.00, areaConves:85,  capacidadeCarga:"04x20' ou 8x10' (40 t)",   caladoMax:2.34, motores:"1x400",          geradores:"1x40",   pob:32, autonomia:15, casco:"Madeira", tipo:"madeira", obs:"" },
+  { nome:"SEM LIMITES 2013",   ano:2012, comprimento:24.70, boca:6.50, areaConves:96,  capacidadeCarga:"04x20' ou 8x10' (26 t)",   caladoMax:2.84, motores:"1x360",          geradores:"1x50",   pob:32, autonomia:10, casco:"Madeira", tipo:"madeira", obs:"" },
+  { nome:"SEM LIMITES III",    ano:2010, comprimento:15.80, boca:5.50, areaConves:42,  capacidadeCarga:"01x20' ou 2x10' (18 t)",   caladoMax:1.40, motores:"1x360",          geradores:"1x50",   pob:30, autonomia:10, casco:"Madeira", tipo:"madeira", obs:"" },
+  { nome:"SEM LIMITES II",     ano:2008, comprimento:14.00, boca:4.50, areaConves:26,  capacidadeCarga:"1x10' (5 t)",              caladoMax:1.55, motores:"1x210",          geradores:"N/A",    pob:30, autonomia:10, casco:"Madeira", tipo:"madeira", obs:"" },
+  { nome:"RS MARIA DO CARMO",  ano:2010, comprimento:14.90, boca:4.40, areaConves:39,  capacidadeCarga:"01x20' ou 2x10' (10 t)",   caladoMax:1.30, motores:"1x280",          geradores:"N/A",    pob:37, autonomia:10, casco:"Madeira", tipo:"madeira", obs:"" }
+];
+
+/* ============ UTILIDADES ============ */
+function parseMotores(s){const r=[];s.split('+').map(x=>x.trim()).forEach(g=>{const m=g.match(/(\d+)\s*x\s*([\d.]+)/i);if(m)for(let i=0;i<+m[1];i++)r.push({potencia:+m[2]});});return r;}
+function potTotal(s){return parseMotores(s).reduce((a,m)=>a+m.potencia,0);}
+function parseGer(s){if(!s||s==='N/A')return[];const r=[];s.replace(/\(.*?\)/g,'').trim().split('+').map(x=>x.trim()).forEach(g=>{const m=g.match(/(\d+)\s*x\s*([\d.]+)/i);if(m)for(let i=0;i<+m[1];i++)r.push({potencia:+m[2]});});return r;}
+function hp2kw(hp){return hp*0.7457;}
+function idade(ano){return new Date().getFullYear()-ano;}
+function classePorte(c){if(c<16)return{l:'Pequeno',col:'var(--text-dim)'};if(c<23)return{l:'Médio',col:'var(--warn-col)'};return{l:'Grande',col:'var(--accent)'};}
+
+/* NOVA #10: eficiência energética */
+function eficiencia(v){
+  const kw=hp2kw(potTotal(v.motores));
+  const kwM2=kw/v.areaConves;
+  if(kwM2<2)return'A';if(kwM2<3.5)return'B';if(kwM2<5)return'C';if(kwM2<7)return'D';return'E';
+}
+
+/* ============ DOM ============ */
+const canvasEl=document.getElementById('engineCanvas');
+const ctx=canvasEl.getContext('2d');
+const emptyState=document.getElementById('emptyState');
+const legendEl=document.getElementById('legend');
+const btnRow=document.getElementById('btnRow');
+const layoutBadge=document.getElementById('layoutBadge');
+const techContent=document.getElementById('techContent');
+const tooltipEl=document.getElementById('tooltip');
+const analysisRow=document.getElementById('analysisRow');
+const alertsPanel=document.getElementById('alertsPanel');
+const chartPanel=document.getElementById('chartPanel');
+const canvasToolbar=document.getElementById('canvasToolbar');
+const notesPanel=document.getElementById('notesPanel');
+const checklistPanel=document.getElementById('checklistPanel');
+const cascoPill=document.getElementById('cascoPill');
+const btnPrev=document.getElementById('btnPrev');
+const btnNext=document.getElementById('btnNext');
+const favBtn=document.getElementById('favBtn');
+const btnCompare=document.getElementById('btnCompare');
+const btnCopyData=document.getElementById('btnCopyData');
+const btnCopyJSON=document.getElementById('btnCopyJSON');
+const btnFullscreen=document.getElementById('btnFullscreen');
+const canvasHud=document.getElementById('canvasHud');
+
+let currentVessel=null,currentIdx=-1;
+let hitAreas=[];
+let zoom=1,showGrid=true,showLabels=true,showTexture=true;
+let gridAlpha=0.40;
+let animActive=false,animFrame=null,propAngle=0;
+let history=[];
+let favorites=JSON.parse(localStorage.getItem('pm_favs')||'[]');
+let allNotes=JSON.parse(localStorage.getItem('pm_notes')||'{}');
+let allChecks=JSON.parse(localStorage.getItem('pm_checks')||'{}');
+let currentChartMetric='hp';
+
+/* ============ CLOCK ============ */
+function updateClock(){document.getElementById('liveClock').textContent=new Date().toTimeString().slice(0,8);}
+updateClock();setInterval(updateClock,1000);
+
+/* ============ TOAST ============ */
+let toastT;
+function showToast(msg,dur=2200){
+  const t=document.getElementById('toast');
+  t.textContent=msg;t.style.display='block';
+  clearTimeout(toastT);toastT=setTimeout(()=>t.style.display='none',dur);
+}
+
+/* ============ NOVA #17: Fleet summary ============ */
+function buildFleetSummary(){
+  const hps=frota.map(v=>potTotal(v.motores));
+  const totalHP=hps.reduce((a,b)=>a+b,0);
+  const avgHP=Math.round(totalHP/frota.length);
+  const maxHP=Math.max(...hps);
+  const totalPOB=frota.reduce((a,v)=>a+v.pob,0);
+  const avgAuto=(frota.reduce((a,v)=>a+v.autonomia,0)/frota.length).toFixed(0);
+  const acoCount=frota.filter(v=>v.tipo==='aço').length;
+  document.getElementById('fleetSummary').innerHTML=
+    fsi(frota.length,'Embarcações')+fsi(totalHP.toLocaleString('pt-BR')+'hp','Pot. Total')+
+    fsi(avgHP+'hp','Média HP')+fsi(maxHP+'hp','Maior HP')+
+    fsi(totalPOB,'Total POB')+fsi(avgAuto+' dias','Autonomia Méd.')+
+    fsi(acoCount+'/'+frota.length,'Casco Aço');
+}
+function fsi(val,label){return`<div class="fleet-summary-item"><div class="fsi-val">${val}</div><div class="fsi-label">${label}</div></div>`;}
+buildFleetSummary();
+
+/* ============ NOVA #2: Search ============ */
+const searchEl=document.getElementById('vesselSearch');
+const searchResults=document.getElementById('searchResults');
+searchEl.addEventListener('input',function(){
+  const q=this.value.trim().toLowerCase();
+  if(!q){searchResults.style.display='none';return;}
+  const matches=frota.filter((v,i)=>{v._idx=i;return v.nome.toLowerCase().includes(q);});
+  if(!matches.length){searchResults.style.display='none';return;}
+  searchResults.innerHTML=matches.map(v=>{
+    const hi=v.nome.replace(new RegExp(q,'gi'),m=>`<mark>${m}</mark>`);
+    return`<div class="search-result-item" data-idx="${v._idx||frota.indexOf(v)}">${hi}<span class="sri-year">${v.ano}</span></div>`;
+  }).join('');
+  searchResults.style.display='block';
+});
+searchResults.addEventListener('click',function(e){
+  const item=e.target.closest('.search-result-item');
+  if(item){loadVessel(+item.dataset.idx);searchEl.value='';searchResults.style.display='none';}
+});
+document.addEventListener('click',function(e){if(!e.target.closest('.search-wrap'))searchResults.style.display='none';});
+
+/* ============ NOVA #1: Theme toggle ============ */
+const themeBtn=document.getElementById('themeBtn');
+let darkMode=true;
+themeBtn.addEventListener('click',function(){
+  darkMode=!darkMode;
+  document.documentElement.setAttribute('data-theme',darkMode?'dark':'light');
+  themeBtn.textContent=darkMode?'🌙':'☀️';
+  if(currentVessel)renderCanvas();
+});
+
+/* ============ NOVA #20: Changelog ============ */
+document.getElementById('versionBadge').addEventListener('click',()=>{
+  document.getElementById('changelogBody').innerHTML=`
+    <div class="report-section"><h3>Versão 4.0 — Novidades</h3>
+      <ul style="list-style:none;display:flex;flex-direction:column;gap:0.5rem;margin-top:0.4rem">
+        ${[
+          ['🌙','Tema claro / escuro com transição suave'],
+          ['🔍','Busca em tempo real com highlight de texto'],
+          ['⚠','Painel de alertas de manutenção automático'],
+          ['📊','Gráfico SVG interativo de comparação da frota'],
+          ['⟳','Animação de rotação do propulsor no canvas'],
+          ['⛶','Modo fullscreen do canvas'],
+          ['{ }','Exportar dados como JSON'],
+          ['⏱','Histórico de embarcações visitadas (breadcrumb)'],
+          ['🖱','Pan drag no canvas'],
+          ['🔋','Classificação de eficiência energética A-E'],
+          ['⇄','Comparar duas embarcações lado a lado'],
+          ['🪵','Textura de casco diferente (Aço vs Madeira)'],
+          ['🔢','HUD com contador de sistemas no canvas'],
+          ['⭐','Favoritos persistentes'],
+          ['✅','Checklist de inspeção interativa'],
+          ['📝','Notas por embarcação (salvas localmente)'],
+          ['📈','Painel de resumo global da frota'],
+          ['🎚','Slider de opacidade da grade do canvas'],
+          ['?','Modal de atalhos de teclado completo'],
+          ['📡','Popups de componentes com mais detalhes']
+        ].map(([ic,tx])=>`<li style="display:flex;gap:0.6rem;align-items:center;font-size:0.82rem"><span>${ic}</span><span style="color:var(--text-dim)">${tx}</span></li>`).join('')}
+      </ul>
+    </div>`;
+  document.getElementById('changelogOverlay').classList.add('active');
+});
+document.getElementById('changelogClose').addEventListener('click',()=>document.getElementById('changelogOverlay').classList.remove('active'));
+
+/* ============ NOVA #21: Shortcuts modal ============ */
+document.getElementById('shortcutsBtn').addEventListener('click',openShortcuts);
+function openShortcuts(){
+  document.getElementById('shortcutsBody').innerHTML=`
+    <div class="shortcut-section"><h4>Navegação</h4>
+      ${sk(['←'],'Embarcação anterior')}${sk(['→'],'Próxima embarcação')}${sk(['F'],'Favoritar')}${sk(['?'],'Este painel')}
+    </div>
+    <div class="shortcut-section"><h4>Canvas</h4>
+      ${sk(['+'],'Zoom in')}${sk(['-'],'Zoom out')}${sk(['0'],'Reset zoom')}${sk(['G'],'Toggle grade')}${sk(['L'],'Toggle rótulos')}${sk(['A'],'Toggle animação propulsor')}
+    </div>
+    <div class="shortcut-section"><h4>Geral</h4>
+      ${sk(['Esc'],'Fechar modal')}${sk(['P'],'Exportar PNG')}${sk(['J'],'Exportar JSON')}${sk(['R'],'Abrir relatório')}${sk(['C'],'Comparar embarcações')}
+    </div>`;
+  document.getElementById('shortcutsOverlay').classList.add('active');
+}
+function sk(keys,desc){return`<div class="shortcut-row"><span class="shortcut-desc">${desc}</span><span class="shortcut-keys">${keys.map(k=>`<span class="key">${k}</span>`).join('')}</span></div>`;}
+document.getElementById('shortcutsClose').addEventListener('click',()=>document.getElementById('shortcutsOverlay').classList.remove('active'));
+
+/* ============ NOVA #8: Breadcrumb / Histórico ============ */
+function updateBreadcrumb(){
+  const bc=document.getElementById('breadcrumb');
+  if(!history.length){bc.innerHTML='<span style="color:var(--text-dim);font-size:0.6rem">HISTÓRICO:</span><span style="opacity:0.3;font-size:0.62rem">Nenhuma embarcação visitada ainda</span>';return;}
+  bc.innerHTML='<span style="color:var(--text-dim);font-size:0.6rem;flex-shrink:0">HISTÓRICO:</span>'+
+    history.map((idx,i)=>`<span class="breadcrumb-item${idx===currentIdx?' breadcrumb-current':''}" onclick="loadVessel(${idx})">${frota[idx].nome}</span>${i<history.length-1?'<span class="breadcrumb-sep">›</span>':''}`).join('');
+}
+
+/* ============ NOVA #14: Favoritos ============ */
+function updateFavBtn(){
+  if(currentIdx<0){favBtn.style.display='none';return;}
+  favBtn.style.display='inline-block';
+  favBtn.textContent=favorites.includes(currentIdx)?'★':'☆';
+  favBtn.title=favorites.includes(currentIdx)?'Remover favorito':'Favoritar embarcação';
+}
+favBtn.addEventListener('click',()=>{
+  const i=favorites.indexOf(currentIdx);
+  if(i>=0)favorites.splice(i,1);else favorites.push(currentIdx);
+  localStorage.setItem('pm_favs',JSON.stringify(favorites));
+  updateFavBtn();
+  showToast(i>=0?'☆ Removido dos favoritos':'★ Adicionado aos favoritos!');
+});
+
+/* ============ LOAD VESSEL ============ */
+function loadVessel(idx){
+  if(idx<0||idx>=frota.length)return;
+  currentIdx=idx;currentVessel=frota[idx];
+  // History
+  if(!history.length||history[history.length-1]!==idx){history.push(idx);if(history.length>8)history.shift();}
+  updateBreadcrumb();updateFavBtn();
+  btnPrev.disabled=idx===0;btnNext.disabled=idx===frota.length-1;
+  btnCompare.style.display='inline-block';
+  btnCopyData.style.display='inline-block';btnCopyJSON.style.display='inline-block';
+  // Casco pill
+  cascoPill.style.display='flex';cascoPill.className='casco-pill '+(currentVessel.tipo==='aço'?'aco':'madeira');
+  cascoPill.textContent=currentVessel.tipo==='aço'?'⚓ Aço Naval':'🪵 Madeira';
+  // Show UI
+  emptyState.style.display='none';canvasEl.style.display='block';
+  legendEl.style.display='flex';btnRow.style.display='flex';canvasToolbar.style.display='flex';
+  analysisRow.style.display='grid';notesPanel.style.display='block';
+  checklistPanel.style.display='block';chartPanel.style.display='block';
+  btnFullscreen.style.display='inline-block';
+  // Notes
+  document.getElementById('notesArea').value=allNotes[currentVessel.nome]||'';
+  document.getElementById('notesSaved').textContent='';
+  // Canvas
+  zoom=1;document.getElementById('zoomLevel').textContent='100%';
+  canvasEl.style.transform='none';
+  canvasEl.classList.remove('canvas-fade');void canvasEl.offsetWidth;canvasEl.classList.add('canvas-fade');
+  stopAnimation();
+  renderCanvas();renderTechPanel();renderPropulsionPanel();renderEnergyPanel();renderFuelPanel();renderOperationPanel();renderAlerts();renderFleetChart();renderChecklist();
+  // URL hash
+  window.location.hash=currentVessel.nome.replace(/\s+/g,'_');
+}
+
+btnPrev.addEventListener('click',()=>{if(currentIdx>0)loadVessel(currentIdx-1);});
+btnNext.addEventListener('click',()=>{if(currentIdx<frota.length-1)loadVessel(currentIdx+1);});
+
+/* ============ KEYBOARD ============ */
+document.addEventListener('keydown',function(e){
+  const tag=e.target.tagName;
+  if(tag==='INPUT'||tag==='TEXTAREA')return;
+  if(e.key==='ArrowLeft'&&currentIdx>0)loadVessel(currentIdx-1);
+  if(e.key==='ArrowRight'&&currentIdx<frota.length-1)loadVessel(currentIdx+1);
+  if(e.key==='Escape'){['modalOverlay','compareOverlay','changelogOverlay','shortcutsOverlay'].forEach(id=>document.getElementById(id).classList.remove('active'));}
+  if(e.key==='?')openShortcuts();
+  if(e.key==='f'||e.key==='F')favBtn.click();
+  if(e.key==='+'||e.key==='=')zoomIn();
+  if(e.key==='-')zoomOut();
+  if(e.key==='0'){zoom=1;applyZoom();}
+  if(e.key==='g'||e.key==='G'){document.getElementById('btnToggleGrid').click();}
+  if(e.key==='l'||e.key==='L'){document.getElementById('btnToggleLabels').click();}
+  if(e.key==='a'||e.key==='A'){document.getElementById('btnToggleAnim').click();}
+  if(e.key==='p'||e.key==='P')document.getElementById('btnExport').click();
+  if(e.key==='j'||e.key==='J')document.getElementById('btnExportJSON').click();
+  if(e.key==='r'||e.key==='R')document.getElementById('btnReport').click();
+  if(e.key==='c'||e.key==='C')document.getElementById('btnCompare').click();
+});
+
+/* ============ ZOOM ============ */
+function zoomIn(){zoom=Math.min(zoom+0.2,3);applyZoom();}
+function zoomOut(){zoom=Math.max(zoom-0.2,0.4);applyZoom();}
+function applyZoom(){
+  const w=canvasEl.parentElement.offsetWidth;
+  canvasEl.style.width=(w*zoom)+'px';
+  document.getElementById('zoomLevel').textContent=Math.round(zoom*100)+'%';
+}
+document.getElementById('btnZoomIn').addEventListener('click',zoomIn);
+document.getElementById('btnZoomOut').addEventListener('click',zoomOut);
+document.getElementById('btnZoomReset').addEventListener('click',()=>{zoom=1;applyZoom();});
+
+/* Grid, Labels, Texture toggles */
+document.getElementById('btnToggleGrid').addEventListener('click',function(){
+  showGrid=!showGrid;this.classList.toggle('active',showGrid);
+  if(currentVessel&&!animActive)renderCanvas();
+});
+document.getElementById('btnToggleLabels').addEventListener('click',function(){
+  showLabels=!showLabels;this.classList.toggle('active',showLabels);
+  if(currentVessel&&!animActive)renderCanvas();
+});
+document.getElementById('btnToggleTexture').addEventListener('click',function(){
+  showTexture=!showTexture;this.classList.toggle('active',showTexture);
+  if(currentVessel&&!animActive)renderCanvas();
+});
+
+/* NOVA #18: Grid opacity */
+document.getElementById('gridOpacity').addEventListener('input',function(){
+  gridAlpha=this.value/100;
+  document.getElementById('gridOpacityVal').textContent=this.value+'%';
+  if(currentVessel&&!animActive)renderCanvas();
+});
+
+/* NOVA #5: Fullscreen */
+btnFullscreen.addEventListener('click',()=>{
+  if(canvasEl.requestFullscreen)canvasEl.requestFullscreen();
+  else if(canvasEl.webkitRequestFullscreen)canvasEl.webkitRequestFullscreen();
+});
+
+/* NOVA #9: Pan drag on canvas */
+(function(){
+  let dragging=false,startX,startY,scrollL,scrollT;
+  const wrapper=canvasEl.parentElement;
+  canvasEl.addEventListener('mousedown',e=>{dragging=true;startX=e.pageX-wrapper.offsetLeft;startY=e.pageY-wrapper.offsetTop;scrollL=wrapper.scrollLeft;scrollT=wrapper.scrollTop;canvasEl.style.cursor='grabbing';});
+  document.addEventListener('mousemove',e=>{if(!dragging)return;const x=e.pageX-wrapper.offsetLeft;const y=e.pageY-wrapper.offsetTop;wrapper.scrollLeft=scrollL-(x-startX);wrapper.scrollTop=scrollT-(y-startY);});
+  document.addEventListener('mouseup',()=>{dragging=false;canvasEl.style.cursor='crosshair';});
+})();
+
+/* NOVA #5: Propulsor animation */
+function startAnimation(){
+  if(animActive)return;
+  animActive=true;
+  document.getElementById('btnToggleAnim').classList.add('active');
+  function loop(){propAngle+=0.04;renderCanvas();animFrame=requestAnimationFrame(loop);}
+  animFrame=requestAnimationFrame(loop);
+}
+function stopAnimation(){
+  animActive=false;propAngle=0;
+  document.getElementById('btnToggleAnim').classList.remove('active');
+  if(animFrame)cancelAnimationFrame(animFrame);
+  if(currentVessel)renderCanvas();
+}
+document.getElementById('btnToggleAnim').addEventListener('click',function(){
+  if(animActive)stopAnimation();else startAnimation();
+});
+
+/* ============ CANVAS RENDER ============ */
+function renderCanvas(){
+  const v=currentVessel;if(!v)return;
+  hitAreas=[];
+  const W=canvasEl.width,H=canvasEl.height;
+  ctx.clearRect(0,0,W,H);
+
+  /* Background */
+  const isDark=document.documentElement.getAttribute('data-theme')!=='light';
+  ctx.fillStyle=isDark?'#0a1622':'#f4f8fc';
+  ctx.fillRect(0,0,W,H);
+
+  /* Grid */
+  if(showGrid){
+    ctx.strokeStyle=`rgba(77,168,196,${gridAlpha})`;ctx.lineWidth=0.5;
+    for(let x=0;x<W;x+=30){ctx.beginPath();ctx.moveTo(x,0);ctx.lineTo(x,H);ctx.stroke();}
+    for(let y=0;y<H;y+=30){ctx.beginPath();ctx.moveTo(0,y);ctx.lineTo(W,y);ctx.stroke();}
+  }
+
+  const motores=parseMotores(v.motores),geradores=parseGer(v.geradores),nM=motores.length;
+  const comprF=v.comprimento/34,bocaF=v.boca/9.5;
+  const hullW=Math.max(470,W*0.85*comprF),hullH=Math.max(260,(H-100)*bocaF);
+  const hullX=(W-hullW)/2,hullY=(H-hullH)/2+18;
+  const bowX=hullX+hullW,sternX=hullX;
+  const midY=hullY+hullH/2,topY=hullY,botY=hullY+hullH;
+  const cx=W/2,cy=midY;
+
+  /* NOVA #16: Hull texture por tipo de casco */
+  ctx.save();
+  ctx.beginPath();
+  ctx.moveTo(sternX+15,topY);ctx.lineTo(bowX-hullW*0.15,topY);
+  ctx.quadraticCurveTo(bowX+10,midY,bowX-hullW*0.15,botY);
+  ctx.lineTo(sternX+15,botY);ctx.quadraticCurveTo(sternX-5,botY,sternX,botY-15);
+  ctx.lineTo(sternX,topY+15);ctx.quadraticCurveTo(sternX-5,topY,sternX+15,topY);
+  ctx.closePath();
+  ctx.clip();
+  if(showTexture){
+    if(v.tipo==='madeira'){
+      // Wood grain lines
+      ctx.strokeStyle='rgba(139,90,43,0.07)';ctx.lineWidth=2;
+      for(let y=topY;y<botY;y+=8){ctx.beginPath();ctx.moveTo(sternX,y);ctx.lineTo(bowX,y+(Math.sin(y*0.3)*3));ctx.stroke();}
+    } else {
+      // Steel plate pattern
+      ctx.strokeStyle='rgba(77,168,196,0.05)';ctx.lineWidth=1;
+      for(let y=topY;y<botY;y+=20){ctx.beginPath();ctx.moveTo(sternX,y);ctx.lineTo(bowX,y);ctx.stroke();}
+      for(let x=sternX;x<bowX;x+=40){ctx.beginPath();ctx.moveTo(x,topY);ctx.lineTo(x,botY);ctx.stroke();}
+    }
+  }
+  ctx.fillStyle=isDark?'rgba(19,80,91,0.07)':'rgba(19,80,91,0.04)';ctx.fillRect(sternX,topY,hullW,hullH);
+  ctx.restore();
+
+  /* Hull outline */
+  ctx.save();
+  ctx.beginPath();
+  ctx.moveTo(sternX+15,topY);ctx.lineTo(bowX-hullW*0.15,topY);
+  ctx.quadraticCurveTo(bowX+10,midY,bowX-hullW*0.15,botY);
+  ctx.lineTo(sternX+15,botY);ctx.quadraticCurveTo(sternX-5,botY,sternX,botY-15);
+  ctx.lineTo(sternX,topY+15);ctx.quadraticCurveTo(sternX-5,topY,sternX+15,topY);
+  ctx.closePath();
+  ctx.strokeStyle=isDark?'rgba(77,168,196,0.32)':'rgba(26,106,138,0.5)';ctx.lineWidth=1.5;
+  ctx.setLineDash([8,4]);ctx.stroke();ctx.setLineDash([]);ctx.restore();
+
+  /* Waterline */
+  const waterY=botY-hullH*(v.caladoMax/v.boca)*0.55;
+  ctx.save();ctx.strokeStyle='rgba(77,168,196,0.13)';ctx.lineWidth=1;ctx.setLineDash([6,5]);
+  ctx.beginPath();ctx.moveTo(sternX,waterY);ctx.lineTo(bowX-hullW*0.14,waterY);ctx.stroke();
+  ctx.setLineDash([]);
+  if(showLabels){ctx.fillStyle='rgba(77,168,196,0.28)';ctx.font='7px Courier New';ctx.textAlign='right';ctx.fillText(`LWL ${v.caladoMax}m`,bowX-hullW*0.15,waterY-2);}
+  ctx.restore();
+
+  if(showLabels){
+    ctx.fillStyle=isDark?'rgba(77,168,196,0.2)':'rgba(26,106,138,0.35)';
+    ctx.font='10px Courier New';ctx.textAlign='center';ctx.fillText('PRAÇA DE MÁQUINAS',W/2,topY+16);
+    ctx.fillStyle=isDark?'rgba(126,143,159,0.38)':'rgba(60,80,100,0.5)';
+    ctx.font='9px Courier New';ctx.textAlign='left';ctx.fillText(`${v.comprimento}m × ${v.boca}m`,hullX+8,botY-5);
+    ctx.fillStyle=isDark?'rgba(126,143,159,0.45)':'rgba(60,80,100,0.6)';ctx.font='bold 10px Courier New';ctx.textAlign='center';
+    ctx.fillText('◄ POPA',sternX+40,topY-12);ctx.fillText('PROA ►',bowX-45,topY-12);
+    ctx.fillStyle=isDark?'rgba(77,168,196,0.18)':'rgba(26,106,138,0.3)';ctx.font='8px Courier New';ctx.textAlign='right';
+    ctx.fillText(`Casco: ${v.casco}`,bowX-8,botY+16);
+  }
+
+  /* Scale bar */
+  const mpx=v.comprimento/hullW,fiveM=5/mpx;
+  const sbX=bowX-150,sbY=botY+16;
+  ctx.strokeStyle='rgba(126,143,159,0.38)';ctx.lineWidth=1;
+  ctx.beginPath();ctx.moveTo(sbX,sbY);ctx.lineTo(sbX+fiveM,sbY);ctx.stroke();
+  [sbX,sbX+fiveM].forEach(x=>{ctx.beginPath();ctx.moveTo(x,sbY-3);ctx.lineTo(x,sbY+3);ctx.stroke();});
+  ctx.fillStyle='rgba(126,143,159,0.38)';ctx.font='8px Courier New';ctx.textAlign='center';ctx.fillText('5 m',sbX+fiveM/2,sbY+12);
+
+  layoutBadge.textContent=nM===1?'LAYOUT CENTRAL':nM===2?'LAYOUT SIMÉTRICO':'LAYOUT TRIANGULAR';
+
+  function motorSz(hp){const s=Math.max(0.7,Math.min(1.35,hp/400));return{w:52*s+30,h:50*s};}
+
+  /* Motor positions */
+  const motorPos=[];
+  if(nM===1){const s=motorSz(motores[0].potencia);motorPos.push({x:cx-s.w/2+40,y:cy-s.h/2,w:s.w,h:s.h,motor:motores[0],idx:0});}
+  else if(nM===2){const gap=hullH*0.38;for(let i=0;i<2;i++){const s=motorSz(motores[i].potencia);motorPos.push({x:cx-s.w/2+20,y:cy+(i===0?-gap/2-s.h/2:gap/2-s.h/2),w:s.w,h:s.h,motor:motores[i],idx:i});}}
+  else{const gap=hullH*0.32;for(let i=0;i<2;i++){const s=motorSz(motores[i].potencia);motorPos.push({x:cx-hullW*0.12-s.w/2,y:cy+(i===0?-gap/2-s.h/2:gap/2-s.h/2),w:s.w,h:s.h,motor:motores[i],idx:i});}const s=motorSz(motores[2].potencia);motorPos.push({x:cx+hullW*0.1-s.w/2,y:cy-s.h/2,w:s.w,h:s.h,motor:motores[2],idx:2});}
+
+  motorPos.forEach(mp=>{
+    drawMotor(mp.x,mp.y,mp.w,mp.h,mp.idx+1,mp.motor.potencia);
+    hitAreas.push({x:mp.x,y:mp.y,w:mp.w,h:mp.h,type:'motor',label:`Motor ${mp.idx+1}`,
+      info:`Potência: ${mp.motor.potencia} HP (${hp2kw(mp.motor.potencia).toFixed(0)} kW)\nTipo: Diesel 4T\nRotação: ~1800 RPM\nAplic: Propulsão principal`});
+    // Exhaust
+    const exX=mp.x+mp.w/2;
+    ctx.save();ctx.strokeStyle='rgba(160,160,170,0.32)';ctx.lineWidth=4;
+    ctx.beginPath();ctx.moveTo(exX,mp.y);ctx.lineTo(exX,topY+22);ctx.stroke();
+    ctx.fillStyle='rgba(160,160,170,0.42)';ctx.fillRect(exX-5,topY+19,10,6);ctx.restore();
+    hitAreas.push({x:exX-5,y:topY+19,w:10,h:mp.y-topY-15,type:'exhaust',label:`Exaustão M${mp.idx+1}`,info:`Tipo: Sistema de exaustão marítimo\nFluido: Gases de combustão\nDireção: Saída pelo convés`});
+  });
+
+  /* Propulsion chain */
+  const propX=sternX+28,propR=22,revW=30,revH=28;
+  motorPos.forEach((mp,idx)=>{
+    const mcy=mp.y+mp.h/2,mlx=mp.x,cpX=mlx-14;
+    // Coupling
+    ctx.beginPath();ctx.arc(cpX,mcy,7,0,Math.PI*2);ctx.fillStyle='#505050';ctx.fill();
+    ctx.strokeStyle='#888';ctx.lineWidth=1.5;ctx.stroke();
+    ctx.beginPath();ctx.arc(cpX,mcy,3,0,Math.PI*2);ctx.strokeStyle='#aaa';ctx.lineWidth=1;ctx.stroke();
+    hitAreas.push({x:cpX-7,y:mcy-7,w:14,h:14,type:'coupling',label:`Acoplamento ${idx+1}`,info:`Tipo: Acoplamento elástico\nFunção: Transmissão com amortecimento de vibração\nMotor: M${idx+1}`});
+    // Reversora
+    const rvX=cpX-10-revW,rvY=mcy-revH/2;
+    drawReversora(rvX,rvY,revW,revH,idx+1);
+    hitAreas.push({x:rvX,y:rvY,w:revW,h:revH,type:'reversora',label:`Reversora ${idx+1}`,info:`Tipo: Caixa Redutora-Reversora\nRedução: ~3:1\nFunção: Redução/inversão rotação\nMotor: M${idx+1}`});
+    // Shaft
+    const shaftStart=rvX,bearX=(shaftStart+propX)/2+10,bearY=mcy+(cy-mcy)*0.45;
+    ctx.save();ctx.strokeStyle='#4da8c4';ctx.lineWidth=3;ctx.setLineDash([8,4]);
+    ctx.beginPath();ctx.moveTo(shaftStart,mcy);ctx.lineTo(bearX,bearY);ctx.stroke();
+    ctx.beginPath();ctx.moveTo(bearX,bearY);ctx.lineTo(propX+propR+3,cy);ctx.stroke();
+    ctx.setLineDash([]);ctx.restore();
+    // Mancal
+    drawMancal(bearX-9,bearY-7,18,14);
+    hitAreas.push({x:bearX-9,y:bearY-7,w:18,h:14,type:'mancal',label:`Mancal ${idx+1}`,info:`Tipo: Mancal de eixo propulsor\nLubrificação: Óleo mineral\nFunção: Suporte radial do eixo`});
+  });
+
+  /* NOVA #5: Propulsor animado */
+  ctx.save();ctx.translate(propX,cy);
+  ctx.beginPath();ctx.arc(0,0,propR,0,Math.PI*2);ctx.fillStyle='#1a3a1a';ctx.fill();
+  ctx.strokeStyle='#3a7a3a';ctx.lineWidth=2;ctx.stroke();
+  // Pás animadas
+  for(let a=0;a<Math.PI*2;a+=Math.PI*2/5){
+    ctx.save();ctx.rotate(a+propAngle);
+    ctx.beginPath();ctx.ellipse(0,-propR+4,3.5,propR-5,0,0,Math.PI*2);
+    ctx.fillStyle='rgba(58,130,58,0.45)';ctx.fill();ctx.restore();
+  }
+  // Hub
+  ctx.beginPath();ctx.arc(0,0,5,0,Math.PI*2);ctx.fillStyle='#5a9a5a';ctx.fill();
+  ctx.restore();
+  if(showLabels){ctx.fillStyle='#5a9a5a';ctx.font='bold 8px Courier New';ctx.textAlign='center';ctx.fillText('PROPULSOR',propX,cy+propR+14);}
+  hitAreas.push({x:propX-propR,y:cy-propR,w:propR*2,h:propR*2,type:'prop',label:'Propulsor',info:`Tipo: Hélice de passo fixo\nPás: 5\nPotência: ${potTotal(v.motores)} HP\nMotores: ${nM}`});
+
+  /* Generators */
+  const gPos=[];
+  if(geradores.length>0){
+    const gW=64,gH=34,gGap=48;const gStartX=cx+hullW*0.22;
+    const totalGH=geradores.length*gH+(geradores.length-1)*(gGap-gH);let gSY=cy-totalGH/2;
+    geradores.forEach((g,i)=>gPos.push({x:gStartX+(i%2===0?0:16),y:gSY+i*gGap,w:gW,h:gH,g,idx:i}));
+  }
+  gPos.forEach(gp=>{
+    drawGerador(gp.x,gp.y,gp.w,gp.h,gp.idx+1,gp.g.potencia);
+    hitAreas.push({x:gp.x,y:gp.y,w:gp.w,h:gp.h,type:'gerador',label:`Gerador ${gp.idx+1}`,info:`Potência: ${gp.g.potencia} kVA\nTensão: 440V / 220V\nFreq: 60 Hz\nTipo: Auxiliar diesel`});
+  });
+
+  if(gPos.length>0){
+    const last=gPos[gPos.length-1];const peX=last.x+last.w+16,peY=cy-22,peW=34,peH=44;
+    drawPainelEletrico(peX,peY,peW,peH);
+    hitAreas.push({x:peX,y:peY,w:peW,h:peH,type:'painel',label:'Quadro Elétrico Principal',info:`Tipo: QEP — Quadro Elétrico Principal\nAlimentado por ${geradores.length} gerador(es)\nFunção: Distribuição e proteção elétrica`});
+    ctx.save();ctx.strokeStyle='rgba(140,120,180,0.18)';ctx.lineWidth=1;ctx.setLineDash([3,3]);
+    gPos.forEach(gp=>{ctx.beginPath();ctx.moveTo(gp.x+gp.w,gp.y+gp.h/2);ctx.lineTo(peX,peY+peH/2);ctx.stroke();});
+    ctx.setLineDash([]);ctx.restore();
+  }
+
+  /* Tanks */
+  const tkW=50,tkH=34,tkP=20;
+  const tbbX=hullX+tkP+18,tbbY=topY+tkP+10;drawTank(tbbX,tbbY,tkW,tkH,'COMB BB');
+  hitAreas.push({x:tbbX,y:tbbY,w:tkW,h:tkH,type:'tanque',label:'Tanque Combustível BB',info:`Tipo: Tanque de diesel\nPosição: Bombordo\nFluido: Óleo diesel marítimo`});
+  const tbeX=hullX+tkP+18,tbeY=botY-tkP-tkH-10;drawTank(tbeX,tbeY,tkW,tkH,'COMB BE');
+  hitAreas.push({x:tbeX,y:tbeY,w:tkW,h:tkH,type:'tanque',label:'Tanque Combustível BE',info:`Tipo: Tanque de diesel\nPosição: Boreste\nFluido: Óleo diesel marítimo`});
+  const wCX=bowX-hullW*0.1,wCY=topY+38,wR=16;
+  ctx.beginPath();ctx.arc(wCX,wCY,wR,0,Math.PI*2);ctx.fillStyle='rgba(42,100,120,0.22)';ctx.fill();ctx.strokeStyle='#2a6478';ctx.lineWidth=1.5;ctx.stroke();
+  ctx.fillStyle='#5a9aba';ctx.font='7px Courier New';ctx.textAlign='center';ctx.fillText('ÁGUA',wCX,wCY+2);
+  hitAreas.push({x:wCX-wR,y:wCY-wR,w:wR*2,h:wR*2,type:'tanque',label:'Tanque Água Doce',info:`Tipo: Tanque de água potável\nUso: Consumo da tripulação`});
+
+  /* Pumps */
+  const pfX=tbbX+tkW+18,pfY=tbbY+tkH/2;drawBomba(pfX,pfY,'BC');
+  hitAreas.push({x:pfX-11,y:pfY-11,w:22,h:22,type:'bomba',label:'Bomba de Combustível',info:`Tipo: Bomba de combustível centrífuga\nFluido: Diesel\nFunção: Transferência e alimentação`});
+  const prX=tbeX+tkW+18,prY=tbeY+tkH/2;drawBomba(prX,prY,'BR');
+  hitAreas.push({x:prX-11,y:prY-11,w:22,h:22,type:'bomba',label:'Bomba de Refrigeração',info:`Tipo: Bomba d'água marítima\nFluido: Água do mar\nFunção: Circuito de arrefecimento`});
+  ctx.save();ctx.strokeStyle='rgba(42,138,138,0.22)';ctx.lineWidth=1;ctx.setLineDash([3,3]);
+  ctx.beginPath();ctx.moveTo(tbbX+tkW,tbbY+tkH/2);ctx.lineTo(pfX-11,pfY);ctx.stroke();
+  ctx.beginPath();ctx.moveTo(tbeX+tkW,tbeY+tkH/2);ctx.lineTo(prX-11,prY);ctx.stroke();
+  ctx.setLineDash([]);ctx.restore();
+
+  /* Compressor */
+  const compCX=bowX-hullW*0.1,compCY=botY-48;drawCompressor(compCX,compCY);
+  hitAreas.push({x:compCX-13,y:compCY-13,w:26,h:26,type:'compressor',label:'Compressor de Ar',info:`Tipo: Compressor de ar de alta pressão\nPressão: ~30 bar\nFunção: Sistema de partida a ar`});
+  const atX=compCX+22,atY=compCY-5,atW=30,atH=18;
+  ctx.fillStyle='rgba(138,122,42,0.18)';ctx.fillRect(atX,atY,atW,atH);ctx.strokeStyle='#8a7a2a';ctx.lineWidth=1;ctx.strokeRect(atX,atY,atW,atH);
+  ctx.fillStyle='#b0a050';ctx.font='6px Courier New';ctx.textAlign='center';ctx.fillText('RES. AR',atX+atW/2,atY+atH/2+2);
+  hitAreas.push({x:atX,y:atY,w:atW,h:atH,type:'compressor',label:'Reservatório de Ar',info:`Tipo: Reservatório de ar\nPressão: ~30 bar\nCapacidade: ~50 L`});
+  ctx.strokeStyle='rgba(138,122,42,0.32)';ctx.lineWidth=1.5;ctx.beginPath();ctx.moveTo(compCX+13,compCY);ctx.lineTo(atX,atY+atH/2);ctx.stroke();
+
+  /* Flow label */
+  if(showLabels){
+    ctx.save();ctx.fillStyle='rgba(77,168,196,0.13)';ctx.font='7px Courier New';ctx.textAlign='center';
+    ctx.fillText('MOTOR → ACOPLAMENTO → REVERSORA → EIXO → MANCAL → PROPULSOR',W/2,botY+30);ctx.restore();
+  }
+
+  /* NOVA #13: HUD com contador de sistemas */
+  const sistemas={Motores:nM,Reversoras:nM,'Eixos/Mancais':nM,Geradores:geradores.length,Tanques:3,Bombas:2};
+  const hudChips=Object.entries(sistemas).map(([k,n])=>n>0?`<span class="hud-chip">${k}: ${n}</span>`:'').join('');
+  canvasHud.innerHTML=hudChips;
+}
+
+/* ============ DRAW FUNCTIONS ============ */
+function drawMotor(x,y,w,h,num,hp){
+  ctx.fillStyle='rgba(0,0,0,0.28)';ctx.fillRect(x+3,y+3,w,h);
+  const g=ctx.createLinearGradient(x,y,x,y+h);g.addColorStop(0,'#a82020');g.addColorStop(1,'#6b1212');
+  ctx.fillStyle=g;ctx.fillRect(x,y,w,h);ctx.strokeStyle='#cc3333';ctx.lineWidth=1.5;ctx.strokeRect(x,y,w,h);
+  ctx.strokeStyle='rgba(200,100,100,0.22)';ctx.lineWidth=0.8;
+  const n=Math.min(4,Math.max(2,Math.round(hp/200)));const gap=w/(n+1);
+  for(let i=1;i<=n;i++){ctx.beginPath();ctx.rect(x+gap*i-4,y+5,8,h-10);ctx.stroke();}
+  ctx.fillStyle='#ffd5d5';ctx.font='bold 10px Courier New';ctx.textAlign='center';ctx.textBaseline='middle';
+  ctx.fillText(`M${num}`,x+w/2,y+h/2-7);ctx.font='9px Courier New';ctx.fillText(`${hp}HP`,x+w/2,y+h/2+7);ctx.textBaseline='alphabetic';
+}
+function drawReversora(x,y,w,h,n){
+  const g=ctx.createLinearGradient(x,y,x,y+h);g.addColorStop(0,'#4a8aaa');g.addColorStop(1,'#2a5a6a');
+  ctx.fillStyle=g;ctx.fillRect(x,y,w,h);ctx.strokeStyle='#5aaacc';ctx.lineWidth=1;ctx.strokeRect(x,y,w,h);
+  const gcx=x+w/2,gcy=y+h/2;ctx.strokeStyle='rgba(180,220,240,0.22)';ctx.lineWidth=0.8;
+  ctx.beginPath();ctx.arc(gcx,gcy,8,0,Math.PI*2);ctx.stroke();ctx.beginPath();ctx.arc(gcx,gcy,4,0,Math.PI*2);ctx.stroke();
+  ctx.fillStyle='#d0eeff';ctx.font='bold 7px Courier New';ctx.textAlign='center';ctx.textBaseline='middle';ctx.fillText(`R${n}`,gcx,gcy);ctx.textBaseline='alphabetic';
+}
+function drawMancal(x,y,w,h){
+  ctx.fillStyle='#4a4a4a';ctx.fillRect(x,y,w,h);ctx.strokeStyle='#7a7a7a';ctx.lineWidth=1;ctx.strokeRect(x,y,w,h);
+  ctx.strokeStyle='rgba(150,150,150,0.28)';ctx.lineWidth=0.5;
+  ctx.beginPath();ctx.moveTo(x+2,y+2);ctx.lineTo(x+w-2,y+h-2);ctx.stroke();ctx.beginPath();ctx.moveTo(x+w-2,y+2);ctx.lineTo(x+2,y+h-2);ctx.stroke();
+}
+function drawGerador(x,y,w,h,n,kva){
+  const g=ctx.createLinearGradient(x,y,x,y+h);g.addColorStop(0,'#d48a3a');g.addColorStop(1,'#9a5a1a');
+  ctx.fillStyle=g;ctx.fillRect(x,y,w,h);ctx.strokeStyle='#e0a050';ctx.lineWidth=1;ctx.strokeRect(x,y,w,h);
+  ctx.fillStyle='#fff5e0';ctx.font='11px sans-serif';ctx.textAlign='left';ctx.fillText('⚡',x+3,y+h/2+4);
+  ctx.fillStyle='#fff5e0';ctx.font='bold 7px Courier New';ctx.textAlign='center';ctx.textBaseline='middle';ctx.fillText(`G${n} ${kva}k`,x+w/2+5,y+h/2);ctx.textBaseline='alphabetic';
+}
+function drawTank(x,y,w,h,l){
+  ctx.fillStyle='rgba(42,100,120,0.22)';ctx.fillRect(x,y,w,h);ctx.strokeStyle='#2a6478';ctx.lineWidth=1;ctx.setLineDash([4,3]);ctx.strokeRect(x,y,w,h);ctx.setLineDash([]);
+  ctx.fillStyle='#5a9aba';ctx.font='7px Courier New';ctx.textAlign='center';ctx.fillText(l,x+w/2,y+h/2+3);
+}
+function drawBomba(cx,cy,l){
+  ctx.beginPath();ctx.arc(cx,cy,11,0,Math.PI*2);ctx.fillStyle='rgba(42,138,138,0.28)';ctx.fill();ctx.strokeStyle='#2a8a8a';ctx.lineWidth=1.5;ctx.stroke();
+  ctx.strokeStyle='rgba(42,180,180,0.38)';ctx.lineWidth=1;
+  for(let a=0;a<Math.PI*2;a+=Math.PI/3){ctx.beginPath();ctx.moveTo(cx,cy);ctx.lineTo(cx+Math.cos(a)*9,cy+Math.sin(a)*9);ctx.stroke();}
+  ctx.fillStyle='#5acaca';ctx.font='bold 6px Courier New';ctx.textAlign='center';ctx.textBaseline='middle';ctx.fillText(l,cx,cy);ctx.textBaseline='alphabetic';
+}
+function drawCompressor(cx,cy){
+  ctx.beginPath();ctx.arc(cx,cy,13,0,Math.PI*2);ctx.fillStyle='rgba(138,122,42,0.22)';ctx.fill();ctx.strokeStyle='#8a7a2a';ctx.lineWidth=1.5;ctx.stroke();
+  ctx.fillStyle='#b0a050';ctx.fillRect(cx-3,cy-6,6,12);ctx.strokeStyle='#d0c060';ctx.lineWidth=0.8;ctx.strokeRect(cx-3,cy-6,6,12);
+  if(showLabels){ctx.fillStyle='#d0c060';ctx.font='bold 6px Courier New';ctx.textAlign='center';ctx.fillText('COMP',cx,cy+20);}
+}
+function drawPainelEletrico(x,y,w,h){
+  ctx.fillStyle='rgba(90,74,122,0.28)';ctx.fillRect(x,y,w,h);ctx.strokeStyle='#5a4a7a';ctx.lineWidth=1.5;ctx.strokeRect(x,y,w,h);
+  ctx.strokeStyle='rgba(140,120,180,0.35)';ctx.lineWidth=0.8;
+  for(let r=0;r<4;r++){const ry=y+7+r*9;ctx.beginPath();ctx.moveTo(x+5,ry);ctx.lineTo(x+w-5,ry);ctx.stroke();ctx.beginPath();ctx.arc(x+w-8,ry,2,0,Math.PI*2);ctx.fillStyle=r===0?'#4a4':'#555';ctx.fill();}
+  ctx.fillStyle='#a090c0';ctx.font='bold 6px Courier New';ctx.textAlign='center';ctx.fillText('QEP',x+w/2,y+h+9);
+}
+
+/* ============ TECH PANEL ============ */
+function renderTechPanel(){
+  const v=currentVessel;if(!v)return;
+  const mot=parseMotores(v.motores),ger=parseGer(v.geradores),hp=potTotal(v.motores);
+  const cfg=mot.length===1?'Motor central único':mot.length===2?'Dois motores simétricos':'Três motores (triangular)';
+  const age=idade(v.ano),cls=classePorte(v.comprimento),eff=eficiencia(v);
+  let h='';
+  h+=sep('Identificação');
+  h+=tr('Embarcação',v.nome,true);h+=tr('Ano',''+v.ano);
+  h+=tr('Idade',`${age} anos`,false,age>15?'warn-val':'');
+  h+=tr('Casco',v.casco);h+=tr('Porte',`<span style="color:${cls.col}">${cls.l}</span>`);
+  h+=tr('Eficiência',`<span class="eff-badge eff-${eff}">${eff}</span> kW/m²`,true);
+  h+=sep('Dimensões');h+=tr('Comprimento',`${v.comprimento} m`);h+=tr('Boca',`${v.boca} m`);h+=tr('Área Convés',`${v.areaConves} m²`);h+=tr('Calado Máx.',`${v.caladoMax} m`);
+  h+=sep('Propulsão');h+=tr('Configuração',cfg);h+=tr('Motores (HP)',v.motores);h+=tr('Pot. Total',`${hp} HP`,true);h+=tr('Pot. (kW)',`${hp2kw(hp).toFixed(0)} kW`,true);h+=tr('Nº Reversoras',''+mot.length);h+=tr('Cadeia','M→Acop→Rev→Eixo→Prop');
+  h+=sep('Geração Elétrica');h+=tr('Geradores',v.geradores);if(ger.length>0)h+=tr('Total kVA',`${ger.reduce((s,g)=>s+g.potencia,0)} kVA`);
+  h+=sep('Operação');h+=tr('POB',''+v.pob);h+=tr('Autonomia',`${v.autonomia} dias`);h+=tr('Cap. Carga',v.capacidadeCarga);if(v.obs)h+=tr('Obs.',v.obs);
+  techContent.innerHTML=h;
+}
+function tr(l,val,hi,extra){return`<div class="tech-row"><div class="tech-label">${l}</div><div class="tech-value${hi?' highlight':''}${extra?' '+extra:''}">${val}</div></div>`;}
+function sep(t){return`<div class="tech-separator">${t}</div>`;}
+
+/* ============ ANALYSIS PANELS ============ */
+function renderPropulsionPanel(){
+  const v=currentVessel,hp=potTotal(v.motores),kw=hp2kw(hp);
+  document.getElementById('propulsionPanel').innerHTML=
+    ar('Potência Total',`${hp} HP`,true)+ar('Potência kW',`${kw.toFixed(0)} kW`,true)+
+    arBar('HP / metro',(hp/v.comprimento).toFixed(1),'HP/m',hp/v.comprimento,70)+
+    arBar('HP / m²',(hp/v.areaConves).toFixed(2),'HP/m²',hp/v.areaConves,9)+
+    ar('HP / POB',(hp/v.pob).toFixed(1));
+}
+function renderEnergyPanel(){
+  const v=currentVessel,hp=potTotal(v.motores),kw=hp2kw(hp);
+  const ger=parseGer(v.geradores),kva=ger.reduce((s,g)=>s+g.potencia,0);
+  const eff=eficiencia(v);
+  document.getElementById('energyPanel').innerHTML=
+    ar('Pot. Mecânica',`${kw.toFixed(0)} kW`)+ar('Pot. Elétrica',`${kva} kVA`,true)+
+    ar('kVA/HP',hp>0?(kva/hp).toFixed(3):'—')+
+    ar('Eficiência',`<span class="eff-badge eff-${eff}">${eff}</span>`,true)+
+    ar('Geradores',''+ger.length);
+}
+function renderFuelPanel(){
+  const v=currentVessel,kw=hp2kw(potTotal(v.motores)),sfc=0.20,den=0.845;
+  let rows='';
+  [25,50,75,100].forEach((p,i)=>{const kwP=kw*p/100;const hi=i===3?'hi':'';rows+=`<div class="fc label-col">${p}%</div><div class="fc ${hi}">${(kwP*sfc).toFixed(1)}</div><div class="fc ${hi}">${(kwP*sfc/den).toFixed(1)}</div>`;});
+  document.getElementById('fuelPanel').innerHTML=ar('SFC Ref.','0.20 kg/kWh')+ar('Dens.','0.845 kg/L')+`<div class="fuel-grid"><div class="fh">Carga</div><div class="fh">kg/h</div><div class="fh">L/h</div>${rows}</div>`;
+}
+function renderOperationPanel(){
+  const v=currentVessel,kw=hp2kw(potTotal(v.motores)),sfc=0.20,den=0.845;
+  const lhFull=kw*sfc/den,totalL=(lhFull*24*v.autonomia).toFixed(0);
+  document.getElementById('operationPanel').innerHTML=
+    ar('POB',''+v.pob,true)+arBar('Autonomia',v.autonomia+' dias','',v.autonomia,35)+
+    ar('Consumo/dia (100%)',`${(lhFull*24).toFixed(0)} L`)+ar('Total est.',`${(+totalL/1000).toFixed(1)} t diesel`)+ar('Cap. Carga',v.capacidadeCarga);
+}
+function ar(l,val,hi){return`<div class="a-row"><span class="al">${l}</span><span class="av${hi?' hi':''}">${val}</span></div>`;}
+function arBar(l,val,unit,num,max){
+  const pct=Math.min(100,Math.round(num/max*100));const col=pct>75?'var(--accent)':pct>40?'var(--warn-col)':'var(--text-dim)';
+  return`<div class="a-row"><span class="al">${l}</span><span class="av" style="display:flex;align-items:center;gap:5px;flex:1;justify-content:flex-end"><span class="mini-bar"><span class="mini-bar-fill" style="width:${pct}%;background:${col}"></span></span>${val} ${unit}</span></div>`;
+}
+
+/* ============ NOVA #3: Alertas de Manutenção ============ */
+function renderAlerts(){
+  const v=currentVessel;const age=idade(v.ano);const alerts=[];
+  if(age>15)alerts.push({icon:'🔴',title:'Embarcação com mais de 15 anos',sub:`Ano de construção: ${v.ano} — ${age} anos de operação. Recomenda-se vistoria estrutural completa.`,badge:'crit',label:'CRÍTICO'});
+  else if(age>10)alerts.push({icon:'🟡',title:'Embarcação com mais de 10 anos',sub:`Ano: ${v.ano} — ${age} anos. Recomenda-se docagem e inspeção preventiva.`,badge:'warn',label:'ATENÇÃO'});
+  if(v.tipo==='madeira')alerts.push({icon:'🟡',title:'Casco de Madeira',sub:'Casco em madeira requer inspeção de apodrecimento, calafetagem e tratamento antifouling periódico.',badge:'warn',label:'MANUTENÇÃO'});
+  if(v.geradores==='N/A')alerts.push({icon:'🔴',title:'Sem Gerador Auxiliar',sub:'Embarcação sem gerador cadastrado. Verificar fonte de energia elétrica de bordo.',badge:'crit',label:'VERIFICAR'});
+  if(parseGer(v.geradores).reduce((s,g)=>s+g.potencia,0)<20&&v.geradores!=='N/A')alerts.push({icon:'🟡',title:'Capacidade de Geração Reduzida',sub:`Total: ${parseGer(v.geradores).reduce((s,g)=>s+g.potencia,0)} kVA. Pode ser insuficiente para equipamentos de alta demanda.`,badge:'warn',label:'BAIXA CAP.'});
+  if(v.autonomia<=10)alerts.push({icon:'🟡',title:'Autonomia Limitada',sub:`${v.autonomia} dias de autonomia. Operações distantes requerem suprimento externo ou reabastecimento frequente.`,badge:'warn',label:'AUTONOMIA'});
+  const ap=document.getElementById('alertsPanel');const ab=document.getElementById('alertsBody');
+  if(alerts.length===0){ap.style.display='none';return;}
+  ap.style.display='block';
+  ab.innerHTML=alerts.map(a=>`<div class="alert-item"><div class="alert-icon">${a.icon}</div><div class="alert-text"><div class="alert-title">${a.title}</div><div class="alert-sub">${a.sub}</div></div><div class="alert-badge ${a.badge}">${a.label}</div></div>`).join('');
+}
+
+/* ============ NOVA #4: Fleet Chart SVG ============ */
+function renderFleetChart(metric){
+  metric=metric||currentChartMetric;currentChartMetric=metric;
+  const svg=document.getElementById('fleetChartSvg');
+  const W=760,H=200,padL=5,padR=5,padT=20,padB=35;
+  const vals=frota.map(v=>{
+    if(metric==='hp')return potTotal(v.motores);
+    if(metric==='area')return v.areaConves;
+    if(metric==='auto')return v.autonomia;
+    return v.pob;
+  });
+  const maxV=Math.max(...vals),barW=(W-padL-padR)/frota.length,gap=2;
+  const isDark=document.documentElement.getAttribute('data-theme')!=='light';
+  const colors={hp:'#8b1a1a',area:'#13505b',auto:'#2a8a4a',pob:'#c76f30'};
+  const col=colors[metric]||'#4da8c4';
+  svg.innerHTML=frota.map((v,i)=>{
+    const val=vals[i],bH=Math.max(4,((val/maxV)*(H-padT-padB)));
+    const x=padL+i*barW+gap/2,y=H-padB-bH,w=barW-gap;
+    const isActive=i===currentIdx;
+    const opacity=isActive?1:0.55;
+    const stroke=isActive?'#4da8c4':'none';
+    const label=v.nome.replace('SEM LIMITES','SL').replace('RS ','').slice(0,8);
+    return`<g style="cursor:pointer" onclick="loadVessel(${i})">
+      <rect x="${x}" y="${y}" width="${w}" height="${bH}" fill="${col}" opacity="${opacity}" stroke="${stroke}" stroke-width="1.5" rx="2"/>
+      <text x="${x+w/2}" y="${y-3}" font-size="7" text-anchor="middle" fill="${isDark?'#7e8f9f':'#5a6e80'}">${val}</text>
+      <text x="${x+w/2}" y="${H-padB+12}" font-size="6" text-anchor="middle" fill="${isDark?'#7e8f9f':'#5a6e80'}" transform="rotate(-30,${x+w/2},${H-padB+12})">${label}</text>
+    </g>`;
+  }).join('')+`<line x1="${padL}" y1="${H-padB}" x2="${W-padR}" y2="${H-padB}" stroke="${isDark?'rgba(77,168,196,0.2)':'rgba(26,106,138,0.2)'}" stroke-width="1"/>`;
+}
+document.querySelectorAll('.chart-tab').forEach(tab=>{
+  tab.addEventListener('click',function(){
+    document.querySelectorAll('.chart-tab').forEach(t=>t.classList.remove('active'));this.classList.add('active');
+    renderFleetChart(this.dataset.metric);
+  });
+});
+
+/* ============ NOVA #12: Checklist ============ */
+const checklistItems=[
+  {cat:'Propulsão',items:['Nível óleo do motor OK','Cintas e correias verificadas','Sistema de arrefecimento OK','Reversora: nível óleo verificado','Eixo propulsor: folga verificada','Hélice: inspeção visual OK']},
+  {cat:'Sistema Elétrico',items:['Geradores: teste de carga','Painel elétrico: disjuntores OK','Baterias: nível de carga OK','Cabos e conexões: sem oxidação']},
+  {cat:'Sistema de Combustível',items:['Tanques: nível verificado','Filtros de combustível limpos','Bombas: funcionamento OK','Sem vazamentos detectados']},
+  {cat:'Segurança',items:['EPIs a bordo completos','Extintores dentro do prazo','Coletes salva-vidas verificados','Sinalizações de emergência OK']},
+];
+function renderChecklist(){
+  const v=currentVessel;if(!v)return;
+  const key='checks_'+v.nome;const saved=allChecks[key]||{};
+  let html='';let total=0,done=0;
+  checklistItems.forEach(group=>{
+    html+=`<div class="check-category">${group.cat}</div>`;
+    group.items.forEach((item,j)=>{
+      const id=`${group.cat}_${j}`;const checked=saved[id]||false;
+      total++;if(checked)done++;
+      html+=`<label class="check-item${checked?' done':''}" style="cursor:pointer"><input type="checkbox" data-id="${id}"${checked?' checked':''}><span>${item}</span></label>`;
+    });
+  });
+  document.getElementById('checklistBody').innerHTML=html;
+  document.getElementById('checklistProgress').textContent=`${done}/${total}`;
+  document.querySelectorAll('#checklistBody input[type=checkbox]').forEach(cb=>{
+    cb.addEventListener('change',function(){
+      const key='checks_'+currentVessel.nome;if(!allChecks[key])allChecks[key]={};
+      allChecks[key][this.dataset.id]=this.checked;
+      localStorage.setItem('pm_checks',JSON.stringify(allChecks));
+      this.closest('label').classList.toggle('done',this.checked);
+      const total=document.querySelectorAll('#checklistBody input').length;
+      const done=document.querySelectorAll('#checklistBody input:checked').length;
+      document.getElementById('checklistProgress').textContent=`${done}/${total}`;
+    });
+  });
+}
+
+/* ============ NOVA #19: Notas ============ */
+document.getElementById('btnSaveNote').addEventListener('click',()=>{
+  if(!currentVessel)return;
+  allNotes[currentVessel.nome]=document.getElementById('notesArea').value;
+  localStorage.setItem('pm_notes',JSON.stringify(allNotes));
+  document.getElementById('notesSaved').textContent='✓ Salvo';
+  showToast('📝 Nota salva!');
+});
+document.getElementById('notesArea').addEventListener('input',()=>{document.getElementById('notesSaved').textContent='';});
+
+/* ============ TOOLTIP ============ */
+canvasEl.addEventListener('mousemove',function(e){
+  const rect=canvasEl.getBoundingClientRect();
+  const sx=canvasEl.width/rect.width,sy=canvasEl.height/rect.height;
+  const mx=(e.clientX-rect.left)*sx,my=(e.clientY-rect.top)*sy;
+  let found=null;for(const a of hitAreas){if(mx>=a.x&&mx<=a.x+a.w&&my>=a.y&&my<=a.y+a.h){found=a;break;}}
+  if(found){
+    tooltipEl.style.display='block';
+    tooltipEl.innerHTML=`<strong style="color:var(--accent)">${found.label}</strong><br><span style="opacity:0.8">${found.info.replace(/\n/g,'<br>')}</span>`;
+    let left=e.clientX+15,top=e.clientY+15;
+    if(left+300>window.innerWidth)left=e.clientX-310;if(top+200>window.innerHeight)top=e.clientY-130;
+    tooltipEl.style.left=left+'px';tooltipEl.style.top=top+'px';canvasEl.style.cursor='pointer';
+  }else{tooltipEl.style.display='none';canvasEl.style.cursor='crosshair';}
+});
+canvasEl.addEventListener('mouseleave',()=>tooltipEl.style.display='none');
+
+/* ============ EXPORT ============ */
+document.getElementById('btnExport').addEventListener('click',()=>{
+  if(!currentVessel)return;
+  const a=document.createElement('a');a.download=`praca_${currentVessel.nome.replace(/\s+/g,'_')}.png`;a.href=canvasEl.toDataURL('image/png');a.click();
+  showToast('✅ PNG exportado!');
+});
+document.getElementById('btnPrint').addEventListener('click',()=>window.print());
+
+/* NOVA #7: Exportar JSON */
+document.getElementById('btnExportJSON').addEventListener('click',()=>{
+  if(!currentVessel)return;
+  const v=currentVessel;
+  const data={...v,potenciaTotal_HP:potTotal(v.motores),potenciaTotal_kW:+hp2kw(potTotal(v.motores)).toFixed(2),numMotores:parseMotores(v.motores).length,numGeradores:parseGer(v.geradores).length,totalKVA:parseGer(v.geradores).reduce((s,g)=>s+g.potencia,0),idade:idade(v.ano),eficiencia:eficiencia(v)};
+  const blob=new Blob([JSON.stringify(data,null,2)],{type:'application/json'});
+  const a=document.createElement('a');a.download=`${v.nome.replace(/\s+/g,'_')}.json`;a.href=URL.createObjectURL(blob);a.click();
+  showToast('{ } JSON exportado!');
+});
+document.getElementById('btnCopyData').addEventListener('click',()=>{
+  if(!currentVessel)return;const v=currentVessel;
+  const txt=`${v.nome} (${v.ano})\nCompr: ${v.comprimento}m | Boca: ${v.boca}m | Área: ${v.areaConves}m²\nMotores: ${v.motores} | Pot: ${potTotal(v.motores)} HP\nGeradores: ${v.geradores} | Autonomia: ${v.autonomia}d | POB: ${v.pob}`;
+  navigator.clipboard.writeText(txt).then(()=>showToast('⎘ Dados copiados!')).catch(()=>showToast('❌ Falha ao copiar'));
+});
+document.getElementById('btnCopyJSON').addEventListener('click',()=>{
+  if(!currentVessel)return;
+  navigator.clipboard.writeText(JSON.stringify(currentVessel,null,2)).then(()=>showToast('{ } JSON copiado!')).catch(()=>showToast('❌ Falha'));
+});
+
+/* ============ NOVA #15: COMPARAR 2 EMBARCAÇÕES ============ */
+document.getElementById('btnCompare').addEventListener('click',()=>{
+  const cA=document.getElementById('compareA'),cB=document.getElementById('compareB');
+  cA.innerHTML=cB.innerHTML=frota.map((v,i)=>`<option value="${i}"${i===currentIdx?' selected':''}>${v.nome}</option>`).join('');
+  if(currentIdx<frota.length-1)cB.value=currentIdx+1;
+  document.getElementById('compareOverlay').classList.add('active');
+});
+document.getElementById('compareClose').addEventListener('click',()=>document.getElementById('compareOverlay').classList.remove('active'));
+document.getElementById('compareOverlay').addEventListener('click',e=>{if(e.target===document.getElementById('compareOverlay'))document.getElementById('compareOverlay').classList.remove('active');});
+document.getElementById('btnRunCompare').addEventListener('click',runCompare);
+function runCompare(){
+  const iA=+document.getElementById('compareA').value,iB=+document.getElementById('compareB').value;
+  const a=frota[iA],b=frota[iB];
+  const fields=[
+    ['Comprimento',v=>`${v.comprimento} m`,v=>v.comprimento,true],
+    ['Boca',v=>`${v.boca} m`,v=>v.boca,true],
+    ['Área Convés',v=>`${v.areaConves} m²`,v=>v.areaConves,true],
+    ['Calado Máx.',v=>`${v.caladoMax} m`,v=>v.caladoMax,true],
+    ['Potência Total',v=>`${potTotal(v.motores)} HP`,v=>potTotal(v.motores),true],
+    ['Pot. em kW',v=>`${hp2kw(potTotal(v.motores)).toFixed(0)} kW`,v=>hp2kw(potTotal(v.motores)),true],
+    ['Geradores',v=>v.geradores,null,false],
+    ['Autonomia',v=>`${v.autonomia} dias`,v=>v.autonomia,true],
+    ['POB',v=>`${v.pob}`,v=>v.pob,false],
+    ['Casco',v=>v.casco,null,false],
+    ['Ano',v=>`${v.ano}`,v=>v.ano,true],
+    ['Eficiência',v=>eficiencia(v),null,false],
+  ];
+  function colHtml(vessel,other,getVal,higher){
+    const va=getVal?getVal(vessel):null;const vb=getVal?getVal(other):null;
+    let cls='';if(va!==null&&vb!==null&&va!==vb)cls=higher?(va>vb?'better':'worse'):(va<vb?'better':'worse');
+    return`<span class="cr-val${cls?' '+cls:''}">${vessel===a?fields.find(f=>f[1](vessel)):''}</span>`;
+  }
+  document.getElementById('compareGrid').innerHTML=
+    `<div class="compare-col"><h3>${a.nome} (${a.ano})</h3>${fields.map(([label,fmt,getV,higher])=>{
+      const va=getV?getV(a):null,vb=getV?getV(b):null;
+      let cls='';if(va!==null&&vb!==null&&va!==vb)cls=higher?(va>vb?'better':'worse'):(va<vb?'better':'worse');
+      return`<div class="compare-row"><span class="cr-label">${label}</span><span class="cr-val${cls?' '+cls:''}">${fmt(a)}</span></div>`;
+    }).join('')}</div>
+    <div class="compare-col"><h3>${b.nome} (${b.ano})</h3>${fields.map(([label,fmt,getV,higher])=>{
+      const va=getV?getV(a):null,vb=getV?getV(b):null;
+      let cls='';if(va!==null&&vb!==null&&va!==vb)cls=higher?(vb>va?'better':'worse'):(vb<va?'better':'worse');
+      return`<div class="compare-row"><span class="cr-label">${label}</span><span class="cr-val${cls?' '+cls:''}">${fmt(b)}</span></div>`;
+    }).join('')}</div>`;
+}
+
+/* ============ MODAL RELATÓRIO ============ */
+document.getElementById('btnReport').addEventListener('click',()=>{
+  if(!currentVessel)return;
+  const v=currentVessel,mot=parseMotores(v.motores),ger=parseGer(v.geradores);
+  const hp=potTotal(v.motores),kw=hp2kw(hp),kva=ger.reduce((s,g)=>s+g.potencia,0),sfc=0.20,den=0.845;
+  document.getElementById('modalTitle').textContent=`Relatório — ${v.nome}`;
+  const geral=`<div id="tab-geral" class="modal-tab-content active"><div class="report-section"><h3>Identificação & Dimensões</h3>${rr('Nome',v.nome)}${rr('Ano',v.ano)}${rr('Casco',v.casco)}${rr('Idade',idade(v.ano)+' anos')}${rr('Porte',classePorte(v.comprimento).l)}${rr('Efic. Energética',eficiencia(v))}${rr('Comprimento',v.comprimento+' m')}${rr('Boca',v.boca+' m')}${rr('Área Convés',v.areaConves+' m²')}${rr('Calado Máx.',v.caladoMax+' m')}</div><div class="report-section"><h3>Operação</h3>${rr('POB',v.pob)}${rr('Autonomia',v.autonomia+' dias')}${rr('Cap. Carga',v.capacidadeCarga)}${v.obs?rr('Obs.',v.obs):''}</div></div>`;
+  const prop=`<div id="tab-propulsao" class="modal-tab-content"><div class="report-section"><h3>Propulsão</h3>${rr('Configuração',v.motores)}${rr('Nº Motores',mot.length)}${mot.map((m,i)=>rr(`Motor ${i+1}`,`${m.potencia} HP (${hp2kw(m.potencia).toFixed(0)} kW)`)).join('')}${rrhi('Pot. Total',`${hp} HP (${kw.toFixed(0)} kW)`)}${rr('Nº Reversoras',mot.length)}${rr('Cadeia','Motor → Acoplamento → Reversora → Eixo → Mancal → Propulsor')}${rrhi('HP/metro',(hp/v.comprimento).toFixed(1)+' HP/m')}${rr('HP/m²',(hp/v.areaConves).toFixed(2)+' HP/m²')}${rr('HP/POB',(hp/v.pob).toFixed(1))}</div></div>`;
+  const ener=`<div id="tab-energia" class="modal-tab-content"><div class="report-section"><h3>Geração de Energia</h3>${rr('Configuração',v.geradores)}${ger.map((g,i)=>rr(`Gerador ${i+1}`,g.potencia+' kVA')).join('')}${ger.length?rrhi('Total kVA',kva+' kVA'):''}${rr('kVA/HP',hp>0?(kva/hp).toFixed(3):'—')}${rr('Eficiência',eficiencia(v))}</div></div>`;
+  const cons=`<div id="tab-consumo" class="modal-tab-content"><div class="report-section"><h3>Consumo de Combustível</h3>${[25,50,75,100].map(p=>{const kwP=kw*p/100;return rr(`Carga ${p}%`,`${(kwP*sfc).toFixed(1)} kg/h  /  ${(kwP*sfc/den).toFixed(1)} L/h`);}).join('')}${rr('Consumo 24h (100%)',(kw*sfc/den*24).toFixed(0)+' L/dia')}${rr('Consumo viagem est.',(kw*sfc/den*24*v.autonomia/1000).toFixed(1)+' t diesel')}</div></div>`;
+  document.getElementById('modalBody').innerHTML=geral+prop+ener+cons;
+  document.querySelectorAll('.modal-tab').forEach((t,i)=>t.classList.toggle('active',i===0));
+  document.querySelectorAll('.modal-tab-content').forEach((c,i)=>c.classList.toggle('active',i===0));
+  document.getElementById('modalOverlay').classList.add('active');
+});
+document.querySelectorAll('.modal-tab').forEach(t=>{
+  t.addEventListener('click',function(){
+    const mo=this.closest('.modal');
+    mo.querySelectorAll('.modal-tab').forEach(x=>x.classList.remove('active'));this.classList.add('active');
+    const id='tab-'+this.dataset.tab;
+    mo.querySelectorAll('.modal-tab-content').forEach(c=>c.classList.toggle('active',c.id===id));
+  });
+});
+function rr(l,v){return`<div class="report-row"><span class="rl">${l}</span><span class="rv">${v}</span></div>`;}
+function rrhi(l,v){return`<div class="report-row"><span class="rl">${l}</span><span class="rv rhi">${v}</span></div>`;}
+document.getElementById('modalClose').addEventListener('click',()=>document.getElementById('modalOverlay').classList.remove('active'));
+document.getElementById('modalOverlay').addEventListener('click',e=>{if(e.target===document.getElementById('modalOverlay'))document.getElementById('modalOverlay').classList.remove('active');});
+
+/* ============ HASH deeplink ============ */
+function checkHash(){
+  const h=window.location.hash.replace('#','').replace(/_/g,' ');
+  if(h){const idx=frota.findIndex(v=>v.nome.toUpperCase()===h.toUpperCase());if(idx>=0)loadVessel(idx);}
+}
+checkHash();window.addEventListener('hashchange',checkHash);
+</script>
+</body>
+</html>
